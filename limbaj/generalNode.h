@@ -2,14 +2,31 @@
 #include <vector>
 #include <string>
 
-using namespace std; 
+using namespace std;
 
-class generalNode {
+enum types
+{
+    INT,
+    FLOAT,
+    CHAR,
+    STRING
+};
 
-    public:
+class generalNode
+{
 
+public:
     string content;
 
     generalNode(string str);
-    ~generalNode();
+    virtual ~generalNode();
+};
+
+class typeNode : public generalNode
+{
+public:
+    types type;
+
+    typeNode(string str, types type) ;
+    ~typeNode();
 };

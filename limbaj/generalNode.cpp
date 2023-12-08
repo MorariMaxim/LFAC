@@ -1,13 +1,22 @@
 #include "generalNode.h"
-using namespace std;
 
-generalNode::generalNode(string str)
+typeNode::typeNode(string str, types type) : generalNode(str)
 {
-    content = str;
-    printf("Node (%s) was created\n",content.c_str());
+    this->type = type;
+    printf("constructing typeNode (%s)\n",content.c_str());
+}
+
+typeNode::~typeNode()
+{
+    printf("destructing  typeNode (%s)\n",content.c_str());
+}
+
+generalNode::generalNode(string str) : content(str)
+{
+    printf("constructing generalNode (%s)\n",content.c_str());
 }
 
 generalNode::~generalNode()
 {
-    printf("Node (%s) was destroyed\n",content.c_str());
+    printf("destructing  generalNode (%s)\n",content.c_str());
 }

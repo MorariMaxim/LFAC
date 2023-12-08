@@ -752,7 +752,7 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 YY_RULE_SETUP
 #line 8 "limbaj.l"
-{ yylval.node = new generalNode(yytext); return TYPE; }
+{ yylval.node = new typeNode(yytext, types::FLOAT); return TYPE; }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
