@@ -1,4 +1,47 @@
+
+
+class Person {    
+private:
+    int a;
+    int b;
+
+public:
+    fn printFields() -> void {
+        
+    }
+    fn as212cw231() -> void {
+        
+    }
+    
+private:
+    int x;
+    int c;
+public:
+}
+
+Person p;
+#
+
+fn func1(int a, int x, float b ) -> int {
+    int x;
+    float a; 
+    func1(a,x,b) // its says type of a (float) != int, because a redefined, try remove the preceding line
+    return x
+}
 int a;
+float b;
+func1(a, a,b)
+int     a = a+b;
+float   e;
+string m;
+
+a + b + c
+if (  a+b    ) {
+
 int b;
 int c;
-a + b + c
+}
+else {
+
+    int x;
+}#

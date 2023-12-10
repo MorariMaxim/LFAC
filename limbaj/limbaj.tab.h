@@ -59,7 +59,16 @@ extern int yydebug;
     ASSIGN = 260,                  /* ASSIGN  */
     NR = 261,                      /* NR  */
     ID = 262,                      /* ID  */
-    TYPE = 263                     /* TYPE  */
+    IF = 263,                      /* IF  */
+    ELSE = 264,                    /* ELSE  */
+    WHILE = 265,                   /* WHILE  */
+    FOR = 266,                     /* FOR  */
+    CONST = 267,                   /* CONST  */
+    RARROW = 268,                  /* RARROW  */
+    FN = 269,                      /* FN  */
+    RETURN = 270,                  /* RETURN  */
+    CLASS = 271,                   /* CLASS  */
+    TYPE = 272                     /* TYPE  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -68,12 +77,22 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 14 "limbaj.y"
+#line 30 "limbaj.y"
 
-    class generalNode* node ;
-    int x;
+    class generalNode* node;
+    class typeNode* typenode;
+    class expressionNode* exprnode;
+    class Symbol * parameterNode;
+    class functionNode* funcNode;
+    class parameterList* parListNode;
+    class functionCall* funcCall;
+    class rvalueNode * rvalNode;
+    class rValueNodes * rvaluesNode;
+    class arrayIndexing * arrayIndexingNode;
+    class symbolTalbeNode* classNode; 
+    class myVectorClass* container;
 
-#line 77 "limbaj.tab.h"
+#line 96 "limbaj.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

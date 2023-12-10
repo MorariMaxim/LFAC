@@ -4,7 +4,7 @@ LDFLAGS = -lssl -lcrypto
 
 target = limbaj
 
-target_src = generalNode.cpp lex.yy.c limbaj.tab.c 
+target_src = generalNode.cpp lex.yy.c limbaj.tab.c symbolTable.cpp 
 to_clean = lex.yy.c limbaj.tab.c limbaj
 
 all: $(target)

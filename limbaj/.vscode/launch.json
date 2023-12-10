@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/home/mmaxim/lfac/lab1/limbaj",
-      "program": "/home/mmaxim/lfac/lab1/limbaj/build/Debug/outDebug",
+      "cwd": "/home/mmaxim/lfac/project/limbaj",
+      "program": "/home/mmaxim/lfac/project/limbaj/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
