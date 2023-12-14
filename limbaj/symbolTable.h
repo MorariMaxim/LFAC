@@ -5,13 +5,15 @@
 class Symbol  
 {
 public:
-    string name;
+    string name;    
     types type;
+    symbolTalbeNode * classType = nullptr;
     bool isConst;
     bool isInit;
     expressionNode * value;
 
     Symbol(bool isConst_, types type_,string name_, expressionNode* value_);
+    void setTo(bool isConst_, types type_,string name_, expressionNode* value_);
     Symbol();
     virtual ~Symbol();
 
@@ -62,11 +64,16 @@ public:
     string getFullPath();
     void   printTable(int depth);
     Symbol* isSymbolDefinedInPath(string name);
+    Symbol* isLocallyDefined(string name);
     functionNode* isFuncDefined(string name);
     symbolTalbeNode * isClassDefined(string name);
 
+    int check_member_access( generalNode * id, generalNode * member_id );
+
     int defineSymbol(bool isConst_, types type_, string name_, expressionNode *value_);
     int defineSymbol(string name, Symbol* symbol);
+    int defineSymbol(Symbol* symbol);
+    int defineUserSymbol(generalNode * classId, generalNode * symbolName);
 
     symbolTalbeNode* addFunction(functionNode * newScope);
     

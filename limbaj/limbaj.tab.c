@@ -142,43 +142,46 @@ enum yysymbol_kind_t
   YYSYMBOL_RETURN = 15,                    /* RETURN  */
   YYSYMBOL_CLASS = 16,                     /* CLASS  */
   YYSYMBOL_TYPE = 17,                      /* TYPE  */
-  YYSYMBOL_18_ = 18,                       /* '='  */
-  YYSYMBOL_19_ = 19,                       /* ';'  */
-  YYSYMBOL_20_ = 20,                       /* '['  */
-  YYSYMBOL_21_ = 21,                       /* ']'  */
-  YYSYMBOL_22_ = 22,                       /* '}'  */
-  YYSYMBOL_23_ = 23,                       /* '('  */
-  YYSYMBOL_24_ = 24,                       /* ')'  */
-  YYSYMBOL_25_ = 25,                       /* '{'  */
-  YYSYMBOL_26_ = 26,                       /* ','  */
-  YYSYMBOL_27_ = 27,                       /* '+'  */
-  YYSYMBOL_28_ = 28,                       /* '-'  */
-  YYSYMBOL_YYACCEPT = 29,                  /* $accept  */
-  YYSYMBOL_progr = 30,                     /* progr  */
-  YYSYMBOL_statement = 31,                 /* statement  */
-  YYSYMBOL_declarations = 32,              /* declarations  */
-  YYSYMBOL_declaration = 33,               /* declaration  */
-  YYSYMBOL_ARRAY = 34,                     /* ARRAY  */
-  YYSYMBOL_array_indexing = 35,            /* array_indexing  */
-  YYSYMBOL_functions = 36,                 /* functions  */
-  YYSYMBOL_function = 37,                  /* function  */
-  YYSYMBOL_function_s = 38,                /* function_s  */
-  YYSYMBOL_function_call = 39,             /* function_call  */
-  YYSYMBOL_rvalues = 40,                   /* rvalues  */
-  YYSYMBOL_parameter_List = 41,            /* parameter_List  */
-  YYSYMBOL_parameter = 42,                 /* parameter  */
-  YYSYMBOL_expr = 43,                      /* expr  */
-  YYSYMBOL_assignment = 44,                /* assignment  */
-  YYSYMBOL_lval = 45,                      /* lval  */
-  YYSYMBOL_rval = 46,                      /* rval  */
-  YYSYMBOL_ISCONST = 47,                   /* ISCONST  */
-  YYSYMBOL_IF_S = 48,                      /* IF_S  */
-  YYSYMBOL_IF_B = 49,                      /* IF_B  */
-  YYSYMBOL_IF_ELSE_S = 50,                 /* IF_ELSE_S  */
-  YYSYMBOL_IF_ELSE_B = 51,                 /* IF_ELSE_B  */
-  YYSYMBOL_class_s = 52,                   /* class_s  */
-  YYSYMBOL_decls_funcs = 53,               /* decls_funcs  */
-  YYSYMBOL_class_b = 54                    /* class_b  */
+  YYSYMBOL_18_ = 18,                       /* '+'  */
+  YYSYMBOL_19_ = 19,                       /* '-'  */
+  YYSYMBOL_20_ = 20,                       /* '*'  */
+  YYSYMBOL_21_ = 21,                       /* '/'  */
+  YYSYMBOL_22_ = 22,                       /* ';'  */
+  YYSYMBOL_23_ = 23,                       /* '='  */
+  YYSYMBOL_24_ = 24,                       /* '['  */
+  YYSYMBOL_25_ = 25,                       /* ']'  */
+  YYSYMBOL_26_ = 26,                       /* '}'  */
+  YYSYMBOL_27_ = 27,                       /* '('  */
+  YYSYMBOL_28_ = 28,                       /* ')'  */
+  YYSYMBOL_29_ = 29,                       /* '{'  */
+  YYSYMBOL_30_ = 30,                       /* ','  */
+  YYSYMBOL_31_ = 31,                       /* '.'  */
+  YYSYMBOL_YYACCEPT = 32,                  /* $accept  */
+  YYSYMBOL_progr = 33,                     /* progr  */
+  YYSYMBOL_statements = 34,                /* statements  */
+  YYSYMBOL_statement = 35,                 /* statement  */
+  YYSYMBOL_declaration = 36,               /* declaration  */
+  YYSYMBOL_ARRAY = 37,                     /* ARRAY  */
+  YYSYMBOL_array_indexing = 38,            /* array_indexing  */
+  YYSYMBOL_function = 39,                  /* function  */
+  YYSYMBOL_function_s = 40,                /* function_s  */
+  YYSYMBOL_function_call = 41,             /* function_call  */
+  YYSYMBOL_rvalues = 42,                   /* rvalues  */
+  YYSYMBOL_parameter_List = 43,            /* parameter_List  */
+  YYSYMBOL_parameter = 44,                 /* parameter  */
+  YYSYMBOL_expr = 45,                      /* expr  */
+  YYSYMBOL_assignment = 46,                /* assignment  */
+  YYSYMBOL_lval = 47,                      /* lval  */
+  YYSYMBOL_rval = 48,                      /* rval  */
+  YYSYMBOL_ISCONST = 49,                   /* ISCONST  */
+  YYSYMBOL_IF_S = 50,                      /* IF_S  */
+  YYSYMBOL_IF_B = 51,                      /* IF_B  */
+  YYSYMBOL_IF_ELSE_S = 52,                 /* IF_ELSE_S  */
+  YYSYMBOL_IF_ELSE_B = 53,                 /* IF_ELSE_B  */
+  YYSYMBOL_class_s = 54,                   /* class_s  */
+  YYSYMBOL_decls_funcs = 55,               /* decls_funcs  */
+  YYSYMBOL_class_b = 56,                   /* class_b  */
+  YYSYMBOL_member_access = 57              /* member_access  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -504,18 +507,18 @@ union yyalloc
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  34
+#define YYFINAL  36
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   153
+#define YYLAST   109
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  29
+#define YYNTOKENS  32
 /* YYNNTS -- Number of nonterminals.  */
 #define YYNNTS  26
 /* YYNRULES -- Number of rules.  */
 #define YYNRULES  60
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  118
+#define YYNSTATES  113
 
 /* YYMAXUTOK -- Last valid token kind.  */
 #define YYMAXUTOK   272
@@ -536,15 +539,15 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-      23,    24,     2,    27,    26,    28,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,    19,
-       2,    18,     2,     2,     2,     2,     2,     2,     2,     2,
+      27,    28,    20,    18,    30,    19,    31,    21,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,    22,
+       2,    23,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,    20,     2,    21,     2,     2,     2,     2,     2,     2,
+       2,    24,     2,    25,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,    25,     2,    22,     2,     2,     2,     2,
+       2,     2,     2,    29,     2,    26,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -566,13 +569,13 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    64,    64,    65,    68,    69,    70,    71,    72,    73,
-      74,    75,    76,    77,    79,    80,    89,    91,    93,    95,
-      97,    99,   101,   102,   104,   105,   108,   109,   111,   113,
-     115,   117,   118,   122,   126,   131,   133,   137,   138,   141,
-     142,   145,   148,   149,   150,   151,   154,   157,   160,   161,
-     164,   167,   170,   173,   176,   179,   181,   182,   183,   185,
-     186
+       0,    70,    70,    71,    73,    74,    77,    78,    79,    80,
+      81,    82,    83,    84,    85,    86,    94,    96,    98,   100,
+     102,   104,   107,   108,   110,   111,   117,   119,   121,   123,
+     124,   129,   133,   138,   140,   144,   145,   148,   149,   152,
+     155,   156,   157,   158,   161,   164,   167,   168,   171,   174,
+     177,   180,   183,   186,   188,   189,   190,   191,   193,   194,
+     196
 };
 #endif
 
@@ -590,13 +593,13 @@ static const char *const yytname[] =
 {
   "\"end of file\"", "error", "\"invalid token\"", "BGIN", "END",
   "ASSIGN", "NR", "ID", "IF", "ELSE", "WHILE", "FOR", "CONST", "RARROW",
-  "FN", "RETURN", "CLASS", "TYPE", "'='", "';'", "'['", "']'", "'}'",
-  "'('", "')'", "'{'", "','", "'+'", "'-'", "$accept", "progr",
-  "statement", "declarations", "declaration", "ARRAY", "array_indexing",
-  "functions", "function", "function_s", "function_call", "rvalues",
+  "FN", "RETURN", "CLASS", "TYPE", "'+'", "'-'", "'*'", "'/'", "';'",
+  "'='", "'['", "']'", "'}'", "'('", "')'", "'{'", "','", "'.'", "$accept",
+  "progr", "statements", "statement", "declaration", "ARRAY",
+  "array_indexing", "function", "function_s", "function_call", "rvalues",
   "parameter_List", "parameter", "expr", "assignment", "lval", "rval",
   "ISCONST", "IF_S", "IF_B", "IF_ELSE_S", "IF_ELSE_B", "class_s",
-  "decls_funcs", "class_b", YY_NULLPTR
+  "decls_funcs", "class_b", "member_access", YY_NULLPTR
 };
 
 static const char *
@@ -606,32 +609,32 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-31)
+#define YYPACT_NINF (-33)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
 
-#define YYTABLE_NINF (-48)
+#define YYTABLE_NINF (-46)
 
 #define yytable_value_is_error(Yyn) \
   0
 
 /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
    STATE-NUM.  */
-static const yytype_int16 yypact[] =
+static const yytype_int8 yypact[] =
 {
-     102,   -31,     1,   -12,   -31,    11,    15,    27,    41,   102,
-       0,   -31,    44,    35,   -31,    54,   -31,   104,   -31,    61,
-      64,   102,   -31,   102,   -31,    84,   -31,    33,   127,    -1,
-     129,    70,    62,   110,   -31,   102,    82,   -31,   -31,    93,
-     127,   -31,    32,   129,   129,   127,    96,    66,    78,   -31,
-       0,    91,   -31,    90,   -31,   -31,   -31,    92,   -31,    43,
-     -31,   -31,    99,    -8,   -31,   129,   -31,   105,   100,   103,
-     127,   -31,   104,   104,    98,   119,   130,   -31,   -31,   -31,
-     108,   -31,   -31,   127,   115,   134,   131,    51,   -31,     9,
-     121,   -31,   -31,   123,   -31,   129,   -31,   118,   -31,   -31,
-     -31,   132,   133,   135,   -31,   -31,   -31,    23,   -31,     7,
-     136,   -31,   -31,   -31,   -31,    34,   -31,   -31
+      51,   -33,    -2,   -17,   -33,    35,    39,    41,     3,    51,
+      38,   -33,    42,    46,   -33,    24,   -33,    54,   -33,    58,
+      60,    51,   -33,    51,   -33,     1,   -33,   -33,   -33,    10,
+       0,    73,    69,    56,    53,    55,   -33,    62,   -33,    79,
+      10,   -33,    -6,    69,    69,    10,    80,    63,    64,    81,
+     -33,   -33,   -33,    13,   -33,   -33,    61,   -33,    -4,   -33,
+     -33,   -33,    34,     6,   -33,    69,    85,   -33,    67,    68,
+      10,   -33,   -33,   -33,   -33,    71,    86,   -33,    57,   -33,
+     -33,   -33,    10,    70,    89,    84,    17,   -33,    54,    75,
+     -33,   -33,    72,    69,    74,   -33,   -33,   -33,   -33,   -33,
+      87,    88,    90,   -33,   -33,    54,   -33,    76,    91,   -33,
+     -33,    77,   -33
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -639,34 +642,34 @@ static const yytype_int16 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       3,    45,    44,     0,    50,     0,     0,     0,     0,     2,
-       5,    14,     0,    12,     9,     0,    11,     6,    10,     0,
-       0,     0,     7,     0,     8,     0,    13,     0,     0,     0,
-       0,     0,     0,     0,     1,     4,     0,    15,    20,     0,
-       0,    30,     0,     0,     0,     0,     0,     0,     0,    60,
-      57,    56,    26,     0,    21,    48,    49,     0,    36,     0,
-      37,    44,     0,     0,    55,     0,    19,     0,     0,     0,
-       0,    29,    42,    43,     0,     0,    52,    54,    27,    59,
-      58,    24,    35,     0,     0,     0,     0,     0,    40,     0,
-       0,    23,    25,     0,    46,     0,    17,     0,    38,    51,
-      41,     0,     0,     0,    18,    22,    28,     0,    53,     0,
-       0,    39,    16,    31,    33,     0,    32,    34
+       3,    43,    42,     0,    48,     0,     0,     0,     0,     2,
+       0,     6,    20,    13,    10,     0,    12,     7,    11,     0,
+       0,     0,     8,     0,     9,     0,    14,    15,    21,     0,
+       0,     0,     0,     0,     0,    19,     1,     0,     4,     0,
+       0,    28,     0,     0,     0,     0,     0,     0,     0,     0,
+      59,    55,    54,     0,    46,    47,     0,    34,     0,    35,
+      60,    42,     0,     0,    53,     0,     0,     5,     0,     0,
+       0,    27,    40,    41,    44,    17,    50,    52,     0,    58,
+      24,    33,     0,     0,     0,     0,     0,    38,    18,     0,
+      23,    25,     0,     0,     0,    56,    57,    36,    49,    39,
+       0,     0,     0,    22,    26,    16,    51,    29,     0,    37,
+      31,    30,    32
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -31,   -31,    10,   -23,    -7,   -31,   -31,   -31,   -24,   -31,
-     -31,   -31,   -31,    45,   -30,   -31,   -31,   -25,   -31,   -31,
-     -31,   -31,   -31,   -31,   122,   -31
+     -33,   -33,   -33,    28,   -24,   -33,   -33,   -23,   -33,   -33,
+     -33,   -33,     7,   -32,   -33,   -33,   -26,   -33,   -33,   -33,
+     -33,   -33,   -33,   -33,   -33,   -33
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     8,    35,    10,    11,    12,    13,    51,    14,    15,
-      16,    59,    87,    88,    17,    18,    19,    57,    20,    21,
-      22,    23,    24,    25,    80,    26
+       0,     8,     9,    10,    11,    12,    13,    14,    15,    16,
+      58,    86,    87,    17,    18,    19,    56,    20,    21,    22,
+      23,    24,    25,    53,    26,    27
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -674,84 +677,74 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-      62,    52,    50,    37,    60,    55,    56,    36,    27,    85,
-       9,    30,     4,    72,    73,    69,    86,     7,    31,   -47,
-      74,    28,    32,    58,    29,    42,   113,    78,   104,    52,
-      50,    47,   114,    48,    33,    89,    43,    44,     1,     2,
-       3,    34,   112,    37,     4,    93,     5,    70,     6,     7,
-      43,    44,    54,   116,    71,    40,    52,    50,    98,   117,
-       1,     2,     3,    38,    39,   107,     4,    82,     5,    83,
-       6,     7,     1,     2,     3,   102,    41,   103,     4,    45,
-       5,    46,     6,     7,     1,     2,     3,    64,    76,    27,
-       4,    36,     5,    63,     6,     7,     4,    36,     5,    68,
-      77,     7,     4,    75,     5,     5,    49,     7,     1,     2,
-       3,    90,    79,    81,     4,    36,     5,    94,     6,     7,
-       4,    91,     5,    84,    92,     7,    43,    44,    65,    66,
-      67,    43,    44,    55,    56,     1,    61,    95,    96,    97,
-      99,   100,   105,   108,   101,   106,   110,    53,   111,   109,
-       0,     0,    85,   115
+      62,    51,    52,    36,    59,    28,    54,    55,    49,    70,
+      32,    72,    73,     4,    69,     5,    54,    55,     7,    74,
+      71,   -45,    29,    84,    81,    30,    82,    50,    57,    31,
+       1,     2,     3,    88,    85,    78,     4,    37,     5,    79,
+       6,     7,    33,    42,    92,   101,    34,   102,    35,    47,
+      41,    48,    43,    44,    95,    96,    97,     1,     2,     3,
+      38,   105,    83,     4,    49,     5,    39,     6,     7,     4,
+      40,     5,    43,    44,     7,     1,    61,    46,    65,    66,
+      60,    45,    64,    63,    67,    68,    80,    75,    28,    76,
+      77,    89,    90,    91,    93,    94,    99,   100,   104,    98,
+     103,   108,     0,   106,   107,   110,   112,    84,   111,   109
 };
 
 static const yytype_int8 yycheck[] =
 {
-      30,    25,    25,    10,    29,     6,     7,     7,     7,    17,
-       0,    23,    12,    43,    44,    40,    24,    17,     7,    18,
-      45,    20,     7,    24,    23,    15,    19,    51,    19,    53,
-      53,    21,    25,    23,     7,    65,    27,    28,     6,     7,
-       8,     0,    19,    50,    12,    70,    14,    15,    16,    17,
-      27,    28,    19,    19,    22,    20,    80,    80,    83,    25,
-       6,     7,     8,    19,    20,    95,    12,    24,    14,    26,
-      16,    17,     6,     7,     8,    24,    22,    26,    12,    18,
-      14,    17,    16,    17,     6,     7,     8,    25,    22,     7,
-      12,     7,    14,    23,    16,    17,    12,     7,    14,     6,
-      22,    17,    12,     7,    14,    14,    22,    17,     6,     7,
-       8,     6,    22,    21,    12,     7,    14,    19,    16,    17,
-      12,    21,    14,    24,    21,    17,    27,    28,    18,    19,
-      20,    27,    28,     6,     7,     6,     7,    18,    19,     9,
-      25,     7,    21,    25,    13,    22,    13,    25,   103,    17,
-      -1,    -1,    17,    17
+      32,    25,    25,     0,    30,     7,     6,     7,     7,    15,
+      27,    43,    44,    12,    40,    14,     6,     7,    17,    45,
+      26,    23,    24,    17,    28,    27,    30,    26,    28,    31,
+       6,     7,     8,    65,    28,    22,    12,     9,    14,    26,
+      16,    17,     7,    15,    70,    28,     7,    30,     7,    21,
+      26,    23,    18,    19,    78,    78,    82,     6,     7,     8,
+      22,    93,    28,    12,     7,    14,    24,    16,    17,    12,
+      24,    14,    18,    19,    17,     6,     7,    17,    23,    24,
+       7,    23,    29,    27,    22,     6,    25,     7,     7,    26,
+      26,     6,    25,    25,    23,     9,     7,    13,    26,    29,
+      25,    13,    -1,    29,    17,    29,    29,    17,    17,   102
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,     6,     7,     8,    12,    14,    16,    17,    30,    31,
-      32,    33,    34,    35,    37,    38,    39,    43,    44,    45,
-      47,    48,    49,    50,    51,    52,    54,     7,    20,    23,
-      23,     7,     7,     7,     0,    31,     7,    33,    19,    20,
-      20,    22,    31,    27,    28,    18,    17,    31,    31,    22,
-      32,    36,    37,    53,    19,     6,     7,    46,    24,    40,
-      46,     7,    43,    23,    25,    18,    19,    20,     6,    46,
-      15,    22,    43,    43,    46,     7,    22,    22,    37,    22,
-      53,    21,    24,    26,    24,    17,    24,    41,    42,    43,
-       6,    21,    21,    46,    19,    18,    19,     9,    46,    25,
-       7,    13,    24,    26,    19,    21,    22,    43,    25,    17,
-      13,    42,    19,    19,    25,    17,    19,    25
+       0,     6,     7,     8,    12,    14,    16,    17,    33,    34,
+      35,    36,    37,    38,    39,    40,    41,    45,    46,    47,
+      49,    50,    51,    52,    53,    54,    56,    57,     7,    24,
+      27,    31,    27,     7,     7,     7,     0,    35,    22,    24,
+      24,    26,    35,    18,    19,    23,    17,    35,    35,     7,
+      26,    36,    39,    55,     6,     7,    48,    28,    42,    48,
+       7,     7,    45,    27,    29,    23,    24,    22,     6,    48,
+      15,    26,    45,    45,    48,     7,    26,    26,    22,    26,
+      25,    28,    30,    28,    17,    28,    43,    44,    45,     6,
+      25,    25,    48,    23,     9,    36,    39,    48,    29,     7,
+      13,    28,    30,    25,    26,    45,    29,    17,    13,    44,
+      29,    17,    29
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    29,    30,    30,    31,    31,    31,    31,    31,    31,
-      31,    31,    31,    31,    32,    32,    33,    33,    33,    33,
-      33,    33,    34,    34,    35,    35,    36,    36,    37,    37,
-      37,    37,    37,    38,    38,    39,    39,    40,    40,    41,
-      41,    42,    43,    43,    43,    43,    44,    45,    46,    46,
-      47,    48,    49,    50,    51,    52,    53,    53,    53,    54,
-      54
+       0,    32,    33,    33,    34,    34,    35,    35,    35,    35,
+      35,    35,    35,    35,    35,    35,    36,    36,    36,    36,
+      36,    36,    37,    37,    38,    38,    39,    39,    39,    39,
+      39,    40,    40,    41,    41,    42,    42,    43,    43,    44,
+      45,    45,    45,    45,    46,    47,    48,    48,    49,    50,
+      51,    52,    53,    54,    55,    55,    55,    55,    56,    56,
+      57
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     1,     0,     2,     1,     1,     1,     1,     1,
-       1,     1,     1,     1,     1,     2,     6,     4,     5,     3,
-       2,     3,     5,     4,     4,     4,     1,     2,     5,     3,
-       2,     7,     8,     7,     8,     4,     3,     1,     3,     3,
-       1,     2,     3,     3,     1,     1,     4,     1,     1,     1,
-       1,     5,     3,     5,     3,     3,     1,     1,     2,     3,
-       2
+       0,     2,     1,     0,     2,     3,     1,     1,     1,     1,
+       1,     1,     1,     1,     1,     1,     5,     3,     4,     2,
+       1,     2,     5,     4,     4,     4,     5,     3,     2,     6,
+       7,     7,     8,     4,     3,     1,     3,     3,     1,     2,
+       3,     3,     1,     1,     3,     1,     1,     1,     1,     5,
+       3,     5,     3,     3,     1,     1,     3,     3,     3,     2,
+       3
 };
 
 
@@ -1214,376 +1207,376 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-  case 2: /* progr: statement  */
-#line 64 "limbaj.y"
-                    { printx("\nsyntactically correct program\n");}
-#line 1221 "limbaj.tab.c"
+  case 2: /* progr: statements  */
+#line 70 "limbaj.y"
+                   { printx("\nsyntactically correct program\n"); }
+#line 1214 "limbaj.tab.c"
     break;
 
   case 3: /* progr: %empty  */
-#line 65 "limbaj.y"
-                    { printx("\nempty prog\n");}
-#line 1227 "limbaj.tab.c"
-    break;
-
-  case 4: /* statement: statement statement  */
-#line 68 "limbaj.y"
-                               { (yyval.node) = (yyvsp[-1].node); printx("\nstmt -> stmt stmt\n");}
-#line 1233 "limbaj.tab.c"
-    break;
-
-  case 5: /* statement: declarations  */
-#line 69 "limbaj.y"
-                       { printx("\nstmt -> declaration\n");}
-#line 1239 "limbaj.tab.c"
-    break;
-
-  case 6: /* statement: expr  */
-#line 70 "limbaj.y"
-               { printx("\nstmt -> expr\n");}
-#line 1245 "limbaj.tab.c"
-    break;
-
-  case 7: /* statement: IF_B  */
 #line 71 "limbaj.y"
-               { printx("\nstmt -> IF_B\n");}
-#line 1251 "limbaj.tab.c"
+                     { printx("\nempty prog\n");}
+#line 1220 "limbaj.tab.c"
     break;
 
-  case 8: /* statement: IF_ELSE_B  */
-#line 72 "limbaj.y"
-                    { printx("\nstatement -> IF_ELSE_B\n");}
-#line 1257 "limbaj.tab.c"
-    break;
-
-  case 9: /* statement: function  */
+  case 4: /* statements: statement ';'  */
 #line 73 "limbaj.y"
-                   { printx("\nstatement -> function\n"); (yyval.node) = (yyvsp[0].funcNode);}
-#line 1263 "limbaj.tab.c"
+                          { (yyval.node) = (yyvsp[-1].node); printx("\nstatement -> statement\n");}
+#line 1226 "limbaj.tab.c"
     break;
 
-  case 10: /* statement: assignment  */
+  case 5: /* statements: statements statement ';'  */
 #line 74 "limbaj.y"
-                     {printx("\nstatement -> assignment\n");}
-#line 1269 "limbaj.tab.c"
+                                   { (yyval.node) = (yyvsp[-2].node); printx("\nstatement -> statements statement\n");}
+#line 1232 "limbaj.tab.c"
     break;
 
-  case 11: /* statement: function_call  */
-#line 75 "limbaj.y"
-                        {printx("statement -> functionCall\n");}
-#line 1275 "limbaj.tab.c"
-    break;
-
-  case 12: /* statement: array_indexing  */
-#line 76 "limbaj.y"
-                         {printx("statement -> array_indexing\n");(yyvsp[0].arrayIndexingNode)->checkIndexes();}
-#line 1281 "limbaj.tab.c"
-    break;
-
-  case 13: /* statement: class_b  */
+  case 6: /* statement: declaration  */
 #line 77 "limbaj.y"
-                  {printx("statement -> class_b\n");}
-#line 1287 "limbaj.tab.c"
+                      { printx("\nstmt -> declaration\n");}
+#line 1238 "limbaj.tab.c"
     break;
 
-  case 14: /* declarations: declaration  */
+  case 7: /* statement: expr  */
+#line 78 "limbaj.y"
+                { printx("\nstmt -> expr\n");}
+#line 1244 "limbaj.tab.c"
+    break;
+
+  case 8: /* statement: IF_B  */
 #line 79 "limbaj.y"
-                          {printx("decls -> decl\n"); (yyval.node)=(yyvsp[0].node);}
-#line 1293 "limbaj.tab.c"
+               { printx("\nstmt -> IF_B\n");}
+#line 1250 "limbaj.tab.c"
     break;
 
-  case 15: /* declarations: declarations declaration  */
+  case 9: /* statement: IF_ELSE_B  */
 #line 80 "limbaj.y"
-                                   {printx("decls -> decls decl\n"); (yyval.node) = new generalNode((yyvsp[-1].node)->content + " " + (yyvsp[0].node)->content); delete (yyvsp[-1].node); delete (yyvsp[0].node);}
+                    { printx("\nstatement -> IF_ELSE_B\n");}
+#line 1256 "limbaj.tab.c"
+    break;
+
+  case 10: /* statement: function  */
+#line 81 "limbaj.y"
+                   { printx("\nstatement -> function\n"); (yyval.node) = (yyvsp[0].funcNode);}
+#line 1262 "limbaj.tab.c"
+    break;
+
+  case 11: /* statement: assignment  */
+#line 82 "limbaj.y"
+                     {printx("\nstatement -> assignment\n");}
+#line 1268 "limbaj.tab.c"
+    break;
+
+  case 12: /* statement: function_call  */
+#line 83 "limbaj.y"
+                         {printx("statement -> functionCall\n");}
+#line 1274 "limbaj.tab.c"
+    break;
+
+  case 13: /* statement: array_indexing  */
+#line 84 "limbaj.y"
+                          {printx("statement -> array_indexing\n");(yyvsp[0].arrayIndexingNode)->checkIndexes();}
+#line 1280 "limbaj.tab.c"
+    break;
+
+  case 14: /* statement: class_b  */
+#line 85 "limbaj.y"
+                  {printx("statement -> class_b\n");}
+#line 1286 "limbaj.tab.c"
+    break;
+
+  case 15: /* statement: member_access  */
+#line 86 "limbaj.y"
+                          {printx("statement -> member_access\n");}
+#line 1292 "limbaj.tab.c"
+    break;
+
+  case 16: /* declaration: ISCONST TYPE ID '=' expr  */
+#line 94 "limbaj.y"
+                                    { printx("\ndecl->const type id init;\n");
+                                            currentSymbolTable->defineSymbol(1,(yyvsp[-3].typenode)->type,(yyvsp[-2].node)->content,(yyvsp[0].exprnode));  (yyval.node) = new generalNode((yyvsp[-4].node)->content + " " + (yyvsp[-3].typenode)->content+ " " + (yyvsp[-2].node)->content+ " " + (yyvsp[0].exprnode)->content); delete (yyvsp[-4].node); delete (yyvsp[-3].typenode);delete (yyvsp[-2].node); delete (yyvsp[0].exprnode);}
 #line 1299 "limbaj.tab.c"
     break;
 
-  case 16: /* declaration: ISCONST TYPE ID '=' expr ';'  */
-#line 89 "limbaj.y"
-                                       { printx("\ndecl->const type id init;\n");
-                                            currentSymbolTable->defineSymbol(1,(yyvsp[-4].typenode)->type,(yyvsp[-3].node)->content,(yyvsp[-1].exprnode));  (yyval.node) = new generalNode((yyvsp[-5].node)->content + " " + (yyvsp[-4].typenode)->content+ " " + (yyvsp[-3].node)->content+ " " + (yyvsp[-1].exprnode)->content); delete (yyvsp[-5].node); delete (yyvsp[-4].typenode);delete (yyvsp[-3].node); delete (yyvsp[-1].exprnode);}
+  case 17: /* declaration: ISCONST TYPE ID  */
+#line 96 "limbaj.y"
+                           { printx("\ndecl->const type id;\n");
+                                            currentSymbolTable->defineSymbol(1,(yyvsp[-1].typenode)->type,(yyvsp[0].node)->content,nullptr);  (yyval.node) = new generalNode("const " + (yyvsp[-2].node)->content + " " + (yyvsp[-1].typenode)->content); delete (yyvsp[-2].node); delete (yyvsp[-1].typenode);delete (yyvsp[0].node);}
 #line 1306 "limbaj.tab.c"
     break;
 
-  case 17: /* declaration: ISCONST TYPE ID ';'  */
-#line 91 "limbaj.y"
-                              { printx("\ndecl->const type id;\n");
-                                            currentSymbolTable->defineSymbol(1,(yyvsp[-2].typenode)->type,(yyvsp[-1].node)->content,nullptr);  (yyval.node) = new generalNode("const " + (yyvsp[-3].node)->content + " " + (yyvsp[-2].typenode)->content); delete (yyvsp[-3].node); delete (yyvsp[-2].typenode);delete (yyvsp[-1].node);}
+  case 18: /* declaration: TYPE ID '=' expr  */
+#line 98 "limbaj.y"
+                            { printx("\ndecl->type id init;\n");
+                                            currentSymbolTable->defineSymbol(0,(yyvsp[-3].typenode)->type,(yyvsp[-2].node)->content,(yyvsp[0].exprnode));  (yyval.node) = new generalNode((yyvsp[-3].typenode)->content + " " + (yyvsp[-2].node)->content+ " = " + (yyvsp[0].exprnode)->content); delete (yyvsp[-3].typenode); delete (yyvsp[-2].node); delete (yyvsp[0].exprnode);}
 #line 1313 "limbaj.tab.c"
     break;
 
-  case 18: /* declaration: TYPE ID '=' expr ';'  */
-#line 93 "limbaj.y"
-                               { printx("\ndecl->type id init;\n");
-                                            currentSymbolTable->defineSymbol(0,(yyvsp[-4].typenode)->type,(yyvsp[-3].node)->content,(yyvsp[-1].exprnode));  (yyval.node) = new generalNode((yyvsp[-4].typenode)->content + " " + (yyvsp[-3].node)->content+ " = " + (yyvsp[-1].exprnode)->content); delete (yyvsp[-4].typenode); delete (yyvsp[-3].node); delete (yyvsp[-1].exprnode);}
+  case 19: /* declaration: TYPE ID  */
+#line 100 "limbaj.y"
+                   { printx("\ndecl->type id;\n");
+                                        currentSymbolTable->defineSymbol(0,(yyvsp[-1].typenode)->type,(yyvsp[0].node)->content,nullptr);  (yyval.node) = new generalNode((yyvsp[-1].typenode)->content + " " + (yyvsp[0].node)->content); delete (yyvsp[-1].typenode); delete (yyvsp[0].node);}
 #line 1320 "limbaj.tab.c"
     break;
 
-  case 19: /* declaration: TYPE ID ';'  */
-#line 95 "limbaj.y"
-                      { printx("\ndecl->type id;\n");
-                                        currentSymbolTable->defineSymbol(0,(yyvsp[-2].typenode)->type,(yyvsp[-1].node)->content,nullptr);  (yyval.node) = new generalNode((yyvsp[-2].typenode)->content + " " + (yyvsp[-1].node)->content); delete (yyvsp[-2].typenode); delete (yyvsp[-1].node);}
-#line 1327 "limbaj.tab.c"
+  case 20: /* declaration: ARRAY  */
+#line 102 "limbaj.y"
+                 { printx("\ndecl -> array\n");printf("array name : %s\n",(yyvsp[0].node)->content.c_str());arraySymbol * as = arraySymbol::buildFromStack(0);currentSymbolTable->defineSymbol((yyvsp[0].node)->content,as); (yyval.node) = (yyvsp[0].node);}
+#line 1326 "limbaj.tab.c"
     break;
 
-  case 20: /* declaration: ARRAY ';'  */
-#line 97 "limbaj.y"
-                    { printx("\ndecl -> array\n");printf("array name : %s\n",(yyvsp[-1].node)->content.c_str());arraySymbol * as = arraySymbol::buildFromStack(0);currentSymbolTable->defineSymbol((yyvsp[-1].node)->content,as); (yyval.node) = (yyvsp[-1].node);}
-#line 1333 "limbaj.tab.c"
-    break;
-
-  case 21: /* declaration: ID ID ';'  */
-#line 99 "limbaj.y"
-                    {printx("\ndecl -> ID ID ;\n"); if(!currentSymbolTable->isClassDefined((yyvsp[-2].node)->content)) printf("undefined class %s\n",(yyvsp[-2].node)->content.c_str()); }
-#line 1339 "limbaj.tab.c"
+  case 21: /* declaration: ID ID  */
+#line 104 "limbaj.y"
+                 {printx("\ndecl -> ID ID ;\n");currentSymbolTable->defineUserSymbol((yyvsp[-1].node),(yyvsp[0].node)); }
+#line 1332 "limbaj.tab.c"
     break;
 
   case 22: /* ARRAY: TYPE ID '[' NR ']'  */
-#line 101 "limbaj.y"
+#line 107 "limbaj.y"
                           { printx("\narray -> type id [ nr ]\n"); (yyval.node) = (yyvsp[-3].node); arrayType=(yyvsp[-4].typenode)->type; arrayStack.push_back(atoi((yyvsp[-1].node)->content.c_str()));}
-#line 1345 "limbaj.tab.c"
+#line 1338 "limbaj.tab.c"
     break;
 
   case 23: /* ARRAY: ARRAY '[' NR ']'  */
-#line 102 "limbaj.y"
+#line 108 "limbaj.y"
                            { printx("\narray -> array [ nr ]\n"); (yyval.node) = (yyvsp[-3].node);arrayStack.push_back(atoi((yyvsp[-1].node)->content.c_str()));}
-#line 1351 "limbaj.tab.c"
+#line 1344 "limbaj.tab.c"
     break;
 
   case 24: /* array_indexing: ID '[' rval ']'  */
-#line 104 "limbaj.y"
+#line 110 "limbaj.y"
                                 {printx("array_indexing -> ID '[' rval ']'");(yyval.arrayIndexingNode)  = new arrayIndexing((yyvsp[-3].node)); (yyval.arrayIndexingNode)->addRvalue((yyvsp[-1].rvalNode)); }
-#line 1357 "limbaj.tab.c"
+#line 1350 "limbaj.tab.c"
     break;
 
   case 25: /* array_indexing: array_indexing '[' rval ']'  */
-#line 105 "limbaj.y"
+#line 111 "limbaj.y"
                                       {printx("array_indexing -> array_indexing '[' NR ']'"); (yyval.arrayIndexingNode) = (yyvsp[-3].arrayIndexingNode); (yyval.arrayIndexingNode)->addRvalue((yyvsp[-1].rvalNode));}
+#line 1356 "limbaj.tab.c"
+    break;
+
+  case 26: /* function: function_s statement RETURN rval '}'  */
+#line 117 "limbaj.y"
+                                               { printx("\nfunction -> function_s statement return rval}\n"); 
+                                                backtrackScope();(yyval.funcNode) = (yyvsp[-4].funcNode); checkRetType((yyvsp[-1].rvalNode));}
 #line 1363 "limbaj.tab.c"
     break;
 
-  case 26: /* functions: function  */
-#line 108 "limbaj.y"
-                    {printx("funcs -> func\n"); (yyval.node) = new generalNode((yyvsp[0].funcNode)->name);}
-#line 1369 "limbaj.tab.c"
-    break;
-
-  case 27: /* functions: functions function  */
-#line 109 "limbaj.y"
-                             {printx("funcs -> funcs func\n"); (yyval.node) = new generalNode((yyvsp[-1].node)->content + " " + (yyvsp[0].funcNode)->content); delete (yyvsp[-1].node); }
-#line 1375 "limbaj.tab.c"
-    break;
-
-  case 28: /* function: function_s statement RETURN rval '}'  */
-#line 111 "limbaj.y"
-                                               { printx("\nfunction -> function_s statement return rval}\n"); 
-                                                backtrackScope();(yyval.funcNode) = (yyvsp[-4].funcNode); checkRetType((yyvsp[-1].rvalNode));}
-#line 1382 "limbaj.tab.c"
-    break;
-
-  case 29: /* function: function_s statement '}'  */
-#line 113 "limbaj.y"
+  case 27: /* function: function_s statement '}'  */
+#line 119 "limbaj.y"
                                    { printx("\nfunction -> function_s statement }\n");  backtrackScope();
                                         (yyval.funcNode) = (yyvsp[-2].funcNode); checkVoidReturn();}
+#line 1370 "limbaj.tab.c"
+    break;
+
+  case 28: /* function: function_s '}'  */
+#line 121 "limbaj.y"
+                         { printx("\nfunction -> function_s statement }\n");  backtrackScope();
+                                        (yyval.funcNode) = (yyvsp[-1].funcNode); checkVoidReturn();}
+#line 1377 "limbaj.tab.c"
+    break;
+
+  case 29: /* function: FN ID '(' ')' RARROW TYPE  */
+#line 123 "limbaj.y"
+                                     { printx("\nfunctions_s -> FN ID ( ) RARROW TYPE ;\n");(yyval.funcNode) = new functionNode((yyvsp[-4].node)->content,(yyvsp[0].typenode)->type,nullptr);}
+#line 1383 "limbaj.tab.c"
+    break;
+
+  case 30: /* function: FN ID '(' parameter_List ')' RARROW TYPE  */
+#line 125 "limbaj.y"
+         { printx("\nfunctions_s -> FN ID ( list ) RARROW TYPE ;\n");(yyval.funcNode) = new functionNode((yyvsp[-5].node)->content,(yyvsp[0].typenode)->type,(yyvsp[-3].parListNode)->parameters);}
 #line 1389 "limbaj.tab.c"
     break;
 
-  case 30: /* function: function_s '}'  */
-#line 115 "limbaj.y"
-                         { printx("\nfunction -> function_s statement }\n");  backtrackScope();
-                                        (yyval.funcNode) = (yyvsp[-1].funcNode); checkVoidReturn();}
-#line 1396 "limbaj.tab.c"
-    break;
-
-  case 31: /* function: FN ID '(' ')' RARROW TYPE ';'  */
-#line 117 "limbaj.y"
-                                        { printx("\nfunctions_s -> FN ID ( ) RARROW TYPE ;\n");(yyval.funcNode) = new functionNode((yyvsp[-5].node)->content,(yyvsp[-1].typenode)->type,nullptr);}
-#line 1402 "limbaj.tab.c"
-    break;
-
-  case 32: /* function: FN ID '(' parameter_List ')' RARROW TYPE ';'  */
-#line 118 "limbaj.y"
-                                                       { printx("\nfunctions_s -> FN ID ( list ) RARROW TYPE ;\n");(yyval.funcNode) = new functionNode((yyvsp[-6].node)->content,(yyvsp[-1].typenode)->type,(yyvsp[-4].parListNode)->parameters);}
-#line 1408 "limbaj.tab.c"
-    break;
-
-  case 33: /* function_s: FN ID '(' ')' RARROW TYPE '{'  */
-#line 122 "limbaj.y"
+  case 31: /* function_s: FN ID '(' ')' RARROW TYPE '{'  */
+#line 129 "limbaj.y"
                                         { printx("\nfunctions_s -> fn id ( ) -> type {\n");(yyval.funcNode) = new functionNode((yyvsp[-5].node)->content,(yyvsp[-1].typenode)->type,nullptr);
                                         currentSymbolTable = currentSymbolTable->addFunction((yyval.funcNode)); returnType = (yyvsp[-1].typenode)->type;
                                          }
-#line 1416 "limbaj.tab.c"
+#line 1397 "limbaj.tab.c"
     break;
 
-  case 34: /* function_s: FN ID '(' parameter_List ')' RARROW TYPE '{'  */
-#line 126 "limbaj.y"
+  case 32: /* function_s: FN ID '(' parameter_List ')' RARROW TYPE '{'  */
+#line 133 "limbaj.y"
                                                        { printx("\nfunctions_s -> fn id ( list ) -> type {\n");  (yyval.funcNode) = new functionNode((yyvsp[-6].node)->content,(yyvsp[-1].typenode)->type,(yyvsp[-4].parListNode)->parameters);
                                         currentSymbolTable=  currentSymbolTable->addFunction((yyval.funcNode));returnType = (yyvsp[-1].typenode)->type;
                                         }
-#line 1424 "limbaj.tab.c"
+#line 1405 "limbaj.tab.c"
     break;
 
-  case 35: /* function_call: ID '(' rvalues ')'  */
-#line 131 "limbaj.y"
+  case 33: /* function_call: ID '(' rvalues ')'  */
+#line 138 "limbaj.y"
                                   {printx("functioncall -> id ( rvalues )\n");(yyval.funcCall) = new functionCall((yyvsp[-3].node)->content); (yyval.funcCall)->setArgs((yyvsp[-1].rvaluesNode)); 
                         bool correct = (yyval.funcCall)->checkCall();if(correct) printf("correct call\n"); else printf("incorrect call\n");}
+#line 1412 "limbaj.tab.c"
+    break;
+
+  case 34: /* function_call: ID '(' ')'  */
+#line 140 "limbaj.y"
+                        {printx("functioncall -> id ()\n");(yyval.funcCall) = new functionCall((yyvsp[-2].node)->content);  
+                        bool correct = (yyval.funcCall)->checkCall();if(correct) printf("correct call\n"); else printf("incorrect call\n");}
+#line 1419 "limbaj.tab.c"
+    break;
+
+  case 35: /* rvalues: rval  */
+#line 144 "limbaj.y"
+              {printx("rvalues -> rval\n");(yyval.rvaluesNode) = new rValueNodes(); (yyval.rvaluesNode)->addRvalue((yyvsp[0].rvalNode)); }
+#line 1425 "limbaj.tab.c"
+    break;
+
+  case 36: /* rvalues: rvalues ',' rval  */
+#line 145 "limbaj.y"
+                           {printx("rvalues -> rvalues , rval\n");(yyvsp[-2].rvaluesNode)->addRvalue((yyvsp[0].rvalNode));(yyval.rvaluesNode)=(yyvsp[-2].rvaluesNode);}
 #line 1431 "limbaj.tab.c"
     break;
 
-  case 36: /* function_call: ID '(' ')'  */
-#line 133 "limbaj.y"
-                        {printx("functioncall -> id ()\n");(yyval.funcCall) = new functionCall((yyvsp[-2].node)->content);  
-                        bool correct = (yyval.funcCall)->checkCall();if(correct) printf("correct call\n"); else printf("incorrect call\n");}
-#line 1438 "limbaj.tab.c"
-    break;
-
-  case 37: /* rvalues: rval  */
-#line 137 "limbaj.y"
-              {printx("rvalues -> rval\n");(yyval.rvaluesNode) = new rValueNodes(); (yyval.rvaluesNode)->addRvalue((yyvsp[0].rvalNode)); }
-#line 1444 "limbaj.tab.c"
-    break;
-
-  case 38: /* rvalues: rvalues ',' rval  */
-#line 138 "limbaj.y"
-                           {printx("rvalues -> rvalues , rval\n");(yyvsp[-2].rvaluesNode)->addRvalue((yyvsp[0].rvalNode));(yyval.rvaluesNode)=(yyvsp[-2].rvaluesNode);}
-#line 1450 "limbaj.tab.c"
-    break;
-
-  case 39: /* parameter_List: parameter_List ',' parameter  */
-#line 141 "limbaj.y"
-                                              {printx("parameter list -> parameter llist , parameter\n"); (yyval.parListNode) = (yyvsp[-2].parListNode); (yyval.parListNode)->addParameter((yyvsp[0].parameterNode));}
-#line 1456 "limbaj.tab.c"
-    break;
-
-  case 40: /* parameter_List: parameter  */
-#line 142 "limbaj.y"
-                    {printx("parameter list -> parameter\n");(yyval.parListNode) = new parameterList();(yyval.parListNode)->addParameter((yyvsp[0].parameterNode));}
-#line 1462 "limbaj.tab.c"
-    break;
-
-  case 41: /* parameter: TYPE ID  */
-#line 145 "limbaj.y"
-                   { printx("\nparamter -> type id"); (yyval.parameterNode) = new Symbol(0,(yyvsp[-1].typenode)->type,(yyvsp[0].node)->content,nullptr);}
-#line 1468 "limbaj.tab.c"
-    break;
-
-  case 42: /* expr: expr '+' expr  */
+  case 37: /* parameter_List: parameter_List ',' parameter  */
 #line 148 "limbaj.y"
-                        { printx("\nexpr -> expr + expr\n");(yyval.exprnode) = new expressionNode(operTypes::plus,(yyvsp[-2].exprnode),(yyvsp[0].exprnode), (yyvsp[-2].exprnode)->content +"+" + (yyvsp[0].exprnode)->content); delete (yyvsp[-2].exprnode); delete (yyvsp[0].exprnode); }
-#line 1474 "limbaj.tab.c"
+                                              {printx("parameter list -> parameter llist , parameter\n"); (yyval.parListNode) = (yyvsp[-2].parListNode); (yyval.parListNode)->addParameter((yyvsp[0].parameterNode));}
+#line 1437 "limbaj.tab.c"
     break;
 
-  case 43: /* expr: expr '-' expr  */
+  case 38: /* parameter_List: parameter  */
 #line 149 "limbaj.y"
+                    {printx("parameter list -> parameter\n");(yyval.parListNode) = new parameterList();(yyval.parListNode)->addParameter((yyvsp[0].parameterNode));}
+#line 1443 "limbaj.tab.c"
+    break;
+
+  case 39: /* parameter: TYPE ID  */
+#line 152 "limbaj.y"
+                   { printx("\nparamter -> type id"); (yyval.parameterNode) = new Symbol(0,(yyvsp[-1].typenode)->type,(yyvsp[0].node)->content,nullptr);}
+#line 1449 "limbaj.tab.c"
+    break;
+
+  case 40: /* expr: expr '+' expr  */
+#line 155 "limbaj.y"
+                        { printx("\nexpr -> expr + expr\n");(yyval.exprnode) = new expressionNode(operTypes::plus,(yyvsp[-2].exprnode),(yyvsp[0].exprnode), (yyvsp[-2].exprnode)->content +"+" + (yyvsp[0].exprnode)->content); delete (yyvsp[-2].exprnode); delete (yyvsp[0].exprnode); }
+#line 1455 "limbaj.tab.c"
+    break;
+
+  case 41: /* expr: expr '-' expr  */
+#line 156 "limbaj.y"
                         { printx("\nexpr -> expr - expr\n");(yyval.exprnode) = new expressionNode(operTypes::minus,(yyvsp[-2].exprnode),(yyvsp[0].exprnode), (yyvsp[-2].exprnode)->content +"-" + (yyvsp[0].exprnode)->content); delete (yyvsp[-2].exprnode); delete (yyvsp[0].exprnode); }
-#line 1480 "limbaj.tab.c"
+#line 1461 "limbaj.tab.c"
     break;
 
-  case 44: /* expr: ID  */
-#line 150 "limbaj.y"
+  case 42: /* expr: ID  */
+#line 157 "limbaj.y"
              {printf("expr -> ID\n");(yyval.exprnode) = new expressionNode(nullptr, (yyvsp[0].node)->content); delete (yyvsp[0].node);}
-#line 1486 "limbaj.tab.c"
+#line 1467 "limbaj.tab.c"
     break;
 
-  case 45: /* expr: NR  */
-#line 151 "limbaj.y"
+  case 43: /* expr: NR  */
+#line 158 "limbaj.y"
              {printf("expr -> NR\n");(yyval.exprnode) = new expressionNode(nullptr, (yyvsp[0].node)->content); delete (yyvsp[0].node);}
-#line 1492 "limbaj.tab.c"
+#line 1473 "limbaj.tab.c"
     break;
 
-  case 46: /* assignment: lval '=' rval ';'  */
-#line 154 "limbaj.y"
-                              { (yyval.node) = new generalNode((yyvsp[-3].node)->content +"=" + (yyvsp[-1].rvalNode)->content); delete (yyvsp[-3].node); delete (yyvsp[-1].rvalNode);}
+  case 44: /* assignment: lval '=' rval  */
+#line 161 "limbaj.y"
+                           { (yyval.node) = new generalNode((yyvsp[-2].node)->content +"=" + (yyvsp[0].rvalNode)->content); delete (yyvsp[-2].node); delete (yyvsp[0].rvalNode);}
+#line 1479 "limbaj.tab.c"
+    break;
+
+  case 45: /* lval: ID  */
+#line 164 "limbaj.y"
+                {printx("lva -> id\n"); checkSymbol((yyvsp[0].node));  }
+#line 1485 "limbaj.tab.c"
+    break;
+
+  case 46: /* rval: NR  */
+#line 167 "limbaj.y"
+                {printx("\nrval -> NR\n"); (yyval.rvalNode) = new intValueNode((yyvsp[0].node)->content);}
+#line 1491 "limbaj.tab.c"
+    break;
+
+  case 47: /* rval: ID  */
+#line 168 "limbaj.y"
+                {printx("\nrval -> ID\n"); checkSymbol((yyvsp[0].node)); Symbol* res = getSymbol((yyvsp[0].node)); 
+                 if(res) (yyval.rvalNode) = new rvalueNode((yyvsp[0].node)->content,res->type); else (yyval.rvalNode) = new rvalueNode((yyvsp[0].node)->content);}
 #line 1498 "limbaj.tab.c"
     break;
 
-  case 47: /* lval: ID  */
-#line 157 "limbaj.y"
-                {printx("lva -> id\n"); checkSymbol((yyvsp[0].node));  }
+  case 48: /* ISCONST: CONST  */
+#line 171 "limbaj.y"
+                {printx("isconst -> const\n");(yyval.node) = (yyvsp[0].node);}
 #line 1504 "limbaj.tab.c"
     break;
 
-  case 48: /* rval: NR  */
-#line 160 "limbaj.y"
-                {printx("\nrval -> NR\n"); (yyval.rvalNode) = new intValueNode((yyvsp[0].node)->content);}
+  case 49: /* IF_S: IF '(' expr ')' '{'  */
+#line 174 "limbaj.y"
+                             { printx("\nIF_S -> IF ( expr ) {\n");(yyval.node) = new generalNode("IF_S"); delete (yyvsp[-4].node);string expr = "if("; expr+=(yyvsp[-2].exprnode)->content+")"; currentSymbolTable = currentSymbolTable->addScope(expr);}
 #line 1510 "limbaj.tab.c"
     break;
 
-  case 49: /* rval: ID  */
-#line 161 "limbaj.y"
-                {printx("\nrval -> ID\n"); checkSymbol((yyvsp[0].node)); Symbol* res = getSymbol((yyvsp[0].node)); 
-                 if(res) (yyval.rvalNode) = new rvalueNode((yyvsp[0].node)->content,res->type); else (yyval.rvalNode) = new rvalueNode((yyvsp[0].node)->content);}
-#line 1517 "limbaj.tab.c"
-    break;
-
-  case 50: /* ISCONST: CONST  */
-#line 164 "limbaj.y"
-                {printx("isconst -> const\n");(yyval.node) = (yyvsp[0].node);}
-#line 1523 "limbaj.tab.c"
-    break;
-
-  case 51: /* IF_S: IF '(' expr ')' '{'  */
-#line 167 "limbaj.y"
-                             { printx("\nIF_S -> IF ( expr ) {\n");(yyval.node) = new generalNode("IF_S"); delete (yyvsp[-4].node);string expr = "if("; expr+=(yyvsp[-2].exprnode)->content+")"; currentSymbolTable = currentSymbolTable->addScope(expr);}
-#line 1529 "limbaj.tab.c"
-    break;
-
-  case 52: /* IF_B: IF_S statement '}'  */
-#line 170 "limbaj.y"
+  case 50: /* IF_B: IF_S statement '}'  */
+#line 177 "limbaj.y"
                            { printx("\nIF_B -> IF_S statement }\n");(yyval.node) = new generalNode("IF_B"); backtrackScope();}
-#line 1535 "limbaj.tab.c"
+#line 1516 "limbaj.tab.c"
     break;
 
-  case 53: /* IF_ELSE_S: IF_S statement '}' ELSE '{'  */
-#line 173 "limbaj.y"
+  case 51: /* IF_ELSE_S: IF_S statement '}' ELSE '{'  */
+#line 180 "limbaj.y"
                                          { printx("\nIF_ELSE_S -> IF_S statement } ELSE {\n");(yyval.node) = new generalNode("IF_ELSE_S"); delete (yyvsp[-4].node); delete (yyvsp[-1].node);string elsescope = "else(" + currentSymbolTable->name+")"; backtrackScope(); currentSymbolTable = currentSymbolTable->addScope(elsescope);}
-#line 1541 "limbaj.tab.c"
+#line 1522 "limbaj.tab.c"
     break;
 
-  case 54: /* IF_ELSE_B: IF_ELSE_S statement '}'  */
-#line 176 "limbaj.y"
-                                   { printx("\nIF_ELSE_B -> IF_ESLE_S statement }\n");(yyval.node) = new generalNode("IF_ELSE_B"); backtrackScope();}
-#line 1547 "limbaj.tab.c"
-    break;
-
-  case 55: /* class_s: CLASS ID '{'  */
-#line 179 "limbaj.y"
-                      {printx("\nclassb_S-> class id { \n");(yyval.classNode) = currentSymbolTable = currentSymbolTable->newClass((yyvsp[-1].node));}
-#line 1553 "limbaj.tab.c"
-    break;
-
-  case 56: /* decls_funcs: functions  */
-#line 181 "limbaj.y"
-                       {printx("\ndecls_funcs -> funcs\n"); (yyval.node) = (yyvsp[0].node);}
-#line 1559 "limbaj.tab.c"
-    break;
-
-  case 57: /* decls_funcs: declarations  */
-#line 182 "limbaj.y"
-                       {printx("\ndecls_funcs -> decls\n"); (yyval.node)=(yyvsp[0].node);}
-#line 1565 "limbaj.tab.c"
-    break;
-
-  case 58: /* decls_funcs: decls_funcs decls_funcs  */
+  case 52: /* IF_ELSE_B: IF_ELSE_S statement '}'  */
 #line 183 "limbaj.y"
-                                  {printx("\ndecls_funcs -> decls_funcs decls_funcs\n"); (yyval.node) = new generalNode((yyvsp[-1].node)->content + " " + (yyvsp[0].node)->content); delete (yyvsp[-1].node); delete (yyvsp[0].node); }
-#line 1571 "limbaj.tab.c"
+                                   { printx("\nIF_ELSE_B -> IF_ESLE_S statement }\n");(yyval.node) = new generalNode("IF_ELSE_B"); backtrackScope();}
+#line 1528 "limbaj.tab.c"
     break;
 
-  case 59: /* class_b: class_s decls_funcs '}'  */
-#line 185 "limbaj.y"
-                                  {printx("\nclassb -> class_S decls_funcs } \n"); backtrackScope();}
-#line 1577 "limbaj.tab.c"
-    break;
-
-  case 60: /* class_b: class_s '}'  */
+  case 53: /* class_s: CLASS ID '{'  */
 #line 186 "limbaj.y"
+                      {printx("\nclassb_S-> class id { \n");(yyval.classNode) = currentSymbolTable = currentSymbolTable->newClass((yyvsp[-1].node));}
+#line 1534 "limbaj.tab.c"
+    break;
+
+  case 54: /* decls_funcs: function  */
+#line 188 "limbaj.y"
+                      {printx("\ndecls_funcs -> funcs\n");}
+#line 1540 "limbaj.tab.c"
+    break;
+
+  case 55: /* decls_funcs: declaration  */
+#line 189 "limbaj.y"
+                       {printx("\ndecls_funcs -> decls\n"); }
+#line 1546 "limbaj.tab.c"
+    break;
+
+  case 56: /* decls_funcs: decls_funcs ';' declaration  */
+#line 190 "limbaj.y"
+                                       {printx("\ndecls_funcs -> decls_funcs declaration\n");  }
+#line 1552 "limbaj.tab.c"
+    break;
+
+  case 57: /* decls_funcs: decls_funcs ';' function  */
+#line 191 "limbaj.y"
+                                    {printx("\ndecls_funcs -> decls_funcs function\n");  }
+#line 1558 "limbaj.tab.c"
+    break;
+
+  case 58: /* class_b: class_s decls_funcs '}'  */
+#line 193 "limbaj.y"
+                                  {printx("\nclassb -> class_S decls_funcs } \n"); backtrackScope();}
+#line 1564 "limbaj.tab.c"
+    break;
+
+  case 59: /* class_b: class_s '}'  */
+#line 194 "limbaj.y"
                       {printx("\nclassb -> class_S } \n");backtrackScope();}
-#line 1583 "limbaj.tab.c"
+#line 1570 "limbaj.tab.c"
+    break;
+
+  case 60: /* member_access: ID '.' ID  */
+#line 196 "limbaj.y"
+                         {printx("\nmember_access -> ID . ID \n"); currentSymbolTable->check_member_access((yyvsp[-2].node),(yyvsp[0].node)); (yyval.node) = new generalNode("member accsss");}
+#line 1576 "limbaj.tab.c"
     break;
 
 
-#line 1587 "limbaj.tab.c"
+#line 1580 "limbaj.tab.c"
 
       default: break;
     }
@@ -1776,17 +1769,13 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 188 "limbaj.y"
+#line 198 "limbaj.y"
 
-
-
-
+ 
 void yyerror(const char * s){
     printf("\nerror: %s at lin/column:%d/%d\n", s, row,col);
 }
-
-
-
+ 
 int main(int argc, char** argv){
  
     col = row = 1; 

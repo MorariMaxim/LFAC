@@ -33,7 +33,8 @@ enum types
     CHAR,
     STRING,
     VOID,
-    OTHER
+    OTHER,
+    USER_TYPE
 };
 
 enum visibilityType

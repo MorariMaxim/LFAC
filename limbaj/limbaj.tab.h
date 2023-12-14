@@ -79,7 +79,7 @@ union YYSTYPE
 {
 #line 30 "limbaj.y"
 
-    class generalNode* node;
+    class generalNode* node; 
     class typeNode* typenode;
     class expressionNode* exprnode;
     class Symbol * parameterNode;

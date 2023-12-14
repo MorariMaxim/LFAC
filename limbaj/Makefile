@@ -1,6 +1,6 @@
 CC = g++
 CFLAGS = -Wall -std=c++11
-LDFLAGS = -lssl -lcrypto
+#LDFLAGS = -lssl -lcrypto
 
 target = limbaj
 

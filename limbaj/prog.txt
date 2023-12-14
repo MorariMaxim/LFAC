@@ -1,6 +1,8 @@
+int a;
 
 
-class Person {    
+#
+class Person {
 private:
     int a;
     int b;
@@ -19,8 +21,6 @@ private:
 public:
 }
 
-Person p;
-#
 
 fn func1(int a, int x, float b ) -> int {
     int x;
