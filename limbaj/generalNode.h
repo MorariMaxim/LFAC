@@ -100,7 +100,8 @@ enum operTypes
 {
     minus,
     plus,
-
+    product,
+    division,
 };
 
 class expressionNode : public generalNode

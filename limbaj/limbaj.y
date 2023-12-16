@@ -154,6 +154,8 @@ parameter: TYPE ID { printx("\nparamter -> type id"); $$ = new Symbol(0,$1->type
 
 expr:     expr '+' expr { printx("\nexpr -> expr + expr\n");$$ = new expressionNode(operTypes::plus,$1,$3, $1->content +"+" + $3->content); delete $1; delete $3; } 
         | expr '-' expr { printx("\nexpr -> expr - expr\n");$$ = new expressionNode(operTypes::minus,$1,$3, $1->content +"-" + $3->content); delete $1; delete $3; } 
+        | expr '*' expr { printx("\nexpr -> expr * expr\n");$$ = new expressionNode(operTypes::product,$1,$3, $1->content +"*" + $3->content); delete $1; delete $3; } 
+        | expr '/' expr { printx("\nexpr -> expr / expr\n");$$ = new expressionNode(operTypes::division,$1,$3, $1->content +"/" + $3->content); delete $1; delete $3; } 
         | ID {printf("expr -> ID\n");$$ = new expressionNode(nullptr, $1->content); delete $1;}; 
         | NR {printf("expr -> NR\n");$$ = new expressionNode(nullptr, $1->content); delete $1;};  
         ;

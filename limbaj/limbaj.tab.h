@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.8.2.  */
+/* A Bison parser, made by GNU Bison 3.5.1.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2020 Free Software Foundation,
    Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -31,9 +31,8 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
-   especially those whose name start with YY_ or yy_.  They are
-   private implementation details that can be changed or removed.  */
+/* Undocumented macros, especially those whose name start with YY_,
+   are private implementation details.  Do not rely on them.  */
 
 #ifndef YY_YY_LIMBAJ_TAB_H_INCLUDED
 # define YY_YY_LIMBAJ_TAB_H_INCLUDED
@@ -45,32 +44,27 @@
 extern int yydebug;
 #endif
 
-/* Token kinds.  */
+/* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    YYEMPTY = -2,
-    YYEOF = 0,                     /* "end of file"  */
-    YYerror = 256,                 /* error  */
-    YYUNDEF = 257,                 /* "invalid token"  */
-    BGIN = 258,                    /* BGIN  */
-    END = 259,                     /* END  */
-    ASSIGN = 260,                  /* ASSIGN  */
-    NR = 261,                      /* NR  */
-    ID = 262,                      /* ID  */
-    IF = 263,                      /* IF  */
-    ELSE = 264,                    /* ELSE  */
-    WHILE = 265,                   /* WHILE  */
-    FOR = 266,                     /* FOR  */
-    CONST = 267,                   /* CONST  */
-    RARROW = 268,                  /* RARROW  */
-    FN = 269,                      /* FN  */
-    RETURN = 270,                  /* RETURN  */
-    CLASS = 271,                   /* CLASS  */
-    TYPE = 272                     /* TYPE  */
+    BGIN = 258,
+    END = 259,
+    ASSIGN = 260,
+    NR = 261,
+    ID = 262,
+    IF = 263,
+    ELSE = 264,
+    WHILE = 265,
+    FOR = 266,
+    CONST = 267,
+    RARROW = 268,
+    FN = 269,
+    RETURN = 270,
+    CLASS = 271,
+    TYPE = 272
   };
-  typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
@@ -92,7 +86,7 @@ union YYSTYPE
     class symbolTalbeNode* classNode; 
     class myVectorClass* container;
 
-#line 96 "limbaj.tab.h"
+#line 90 "limbaj.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -103,8 +97,6 @@ typedef union YYSTYPE YYSTYPE;
 
 extern YYSTYPE yylval;
 
-
 int yyparse (void);
-
 
 #endif /* !YY_YY_LIMBAJ_TAB_H_INCLUDED  */
