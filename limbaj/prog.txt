@@ -1,14 +1,8 @@
-class temp {
-    int b;
-
-    fn func() -> void {
-
-    }
+class test {
+    int a;    
 }
-temp a ;
-a.b ;
-a.func();
 
+test x( a : 10);
 
 #
 
@@ -30,7 +24,9 @@ private:
     int c;
 public:
 }
-
+temp a ;
+a.b ;
+a.func();
 
 fn func1(int a, int x, float b ) -> int {
     int x;

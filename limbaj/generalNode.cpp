@@ -26,18 +26,18 @@ inline types str2Type(string str)
 }
 
 static int debug = 0;
-typeNode::typeNode(string str) : generalNode(str)
+TypeNode::TypeNode(string str) : generalNode(str)
 {
     int debug = 0;
     this->type = str2Type(str);
     if (debug)
-        printf("\nconstructing typeNode (%s)\n", str.c_str());
+        printf("\nconstructing TypeNode (%s)\n", str.c_str());
 }
 
-typeNode::~typeNode()
+TypeNode::~TypeNode()
 {
     if (debug)
-        printf("destructing  typeNode (%s) \n", content.c_str());
+        printf("destructing  TypeNode (%s) \n", content.c_str());
     string s = "1";
 }
 
@@ -81,7 +81,150 @@ void printx(string str)
         this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
-expressionNode::expressionNode(operTypes op, expressionNode *left, expressionNode *right, string cont) : generalNode(cont)
+bool compare_types(TypeNode *t1, TypeNode *t2)
+{
+
+    if (t1->type != t2->type)
+        return false;
+
+    if (t1->type == types::USER_TYPE)
+    {
+
+        auto clas = dynamic_cast<ClassType *>(t1);
+
+        if (!clas)
+        {
+            printf("error at dynamic cast \n");
+            return false;
+        }
+        string name1 = clas->clas->name;
+        clas = dynamic_cast<ClassType *>(t1);
+
+        if (!clas)
+        {
+            printf("error at dynamic cast \n");
+            return false;
+        }
+        string name2 = clas->clas->name;
+
+        if (name1 != name2)
+            return false;
+    }
+    return true;
+}
+
+TypeNode *ExpressionNode::type_of()
+{
+    if (type_node)
+        return type_node;
+
+    if (oper == OperTypes::NEG || oper == OperTypes::UMINUS)
+    {
+        return left->type_of();
+    }
+    auto t1 = left->type_of();
+
+    auto t2 = right->type_of();
+
+    if (!compare_types(t1, t2))
+        return nullptr;
+
+    return t1;
+}
+
+#define check_children_for_nullptr()     \
+    {                                    \
+        if (!left)                       \
+        {                                \
+            printf("left child null\n"); \
+            return nullptr;              \
+        }                                \
+        if (!right)                      \
+        {                                \
+            return nullptr;              \
+            printf("left child null\n"); \
+        }                                \
+    }
+
+TypeNode *ExpressionNode::eval_binary_operator()
+{
+
+    auto t1 = left->eval();
+    auto t2 = right->eval();
+
+    if (!compare_types(t1, t2))
+        return nullptr;
+
+    switch (oper)
+    {
+    case OperTypes::SUB:
+    {
+        t1->sub(t2);
+        break;
+    }
+    case OperTypes::ADD:
+    {
+        t1->add(t2);
+        break;
+    }
+    case OperTypes::MUL:
+    {
+        t1->mul(t2);
+        break;
+    }
+    case OperTypes::DIV:
+    {
+        t1->div(t2);
+        break;
+    }
+    default:
+        return nullptr;
+    }
+
+    delete t2;
+
+    return t1;
+}
+TypeNode *ExpressionNode::eval_unary_operator()
+{
+    auto t1 = left->eval();  
+    switch (oper)
+    {
+    case OperTypes::NEG:
+    {
+        t1->neg();
+        break;
+    }
+    case OperTypes::UMINUS:
+    {
+        t1->uminus();
+        break;
+    } 
+    default:
+        return nullptr;
+    }
+
+    return t1;
+}
+TypeNode *ExpressionNode::eval()
+{
+    if (type_node)
+    {
+        auto t = new TypeNode();
+        *t = *type_node;
+        return t;
+    }
+
+    if (oper == OperTypes::SUB || oper == OperTypes::ADD || oper == OperTypes::MUL || oper == OperTypes::DIV)
+        return eval_binary_operator();
+
+    if (oper == OperTypes::NEG || oper == OperTypes::UMINUS)
+        return eval_unary_operator();
+        
+    return nullptr;
+}
+
+ExpressionNode::ExpressionNode(OperTypes op, ExpressionNode *left, ExpressionNode *right, string cont) : generalNode(cont)
 {
     this->oper = op;
     this->left = left;
@@ -90,16 +233,16 @@ expressionNode::expressionNode(operTypes op, expressionNode *left, expressionNod
     string s = "213";
 }
 
-expressionNode::expressionNode(value *val, string cont) : generalNode(cont)
+ExpressionNode::ExpressionNode(TypeNode *type_node, string cont) : generalNode(cont)
 {
-    this->val = val;
+    this->type_node = type_node;
 }
 
-expressionNode::~expressionNode()
+ExpressionNode::~ExpressionNode()
 {
     delete right;
     delete left;
-    delete this->val;
+    delete this->type_node;
 }
 
 value::~value()
@@ -235,14 +378,14 @@ functionCall::functionCall(generalNode *scope_id, myVectorClass *rest)
     if (funcnode == nullptr)
     {
         printf("found no such function\n");
-        return ;
+        return;
     }
-        
+
     else
         printf("found such function\n");
 
     functionName = funcnode;
-    
+
     args = new vector<rvalueNode *>();
 
     if (rest->pointers.size() > 1)
@@ -299,21 +442,23 @@ arrayIndexing::arrayIndexing(generalNode *arr)
         return;
     }
 
-    auto convert = dynamic_cast<arraySymbol *>(sym);
-    if (convert == nullptr)
+    auto convert = dynamic_cast<ArrayType *>(sym->typen);
+    if (!convert)
     {
-        printf("%s is a symbol but not an arraySymbol\n", arr->content.c_str());
+        printf("%s is not an ArrayType\n", arr->content.c_str());
     }
     else
         array = convert;
 }
-inline intValueNode *convertIntValNode(rvalueNode *rvNode, int it)
-{
-
-    return nullptr;
-}
 bool arrayIndexing::checkIndexes()
 {
+    printf("indexes : ");
+    for (auto v : *values)
+    {
+        printf("%d ", (dynamic_cast<IntType *>(v))->value);
+    }
+    printf("\n");
+
     if (!values)
     {
         printf("rvalues of array_indexing is null");
@@ -338,7 +483,7 @@ bool arrayIndexing::checkIndexes()
         size = temp->size;
         // printf("size = %d\n",size);
         rvNode = (*values)[it];
-        auto convert = dynamic_cast<intValueNode *>(rvNode);
+        auto convert = dynamic_cast<IntType *>(rvNode);
         if (!convert)
         {
             printf("%dth indexing is not a integer value\n", it + 1);
@@ -349,21 +494,26 @@ bool arrayIndexing::checkIndexes()
 
         if (val < 0 || val >= size)
         {
-            printf("%dth indexing [%d] is out of range\n", it + 1, val);
+            printf("%dth indexing [%d] is out of range[%d]\n", it + 1, val, size);
             return false;
         }
-        if (!temp->array_elements)
+        if (!temp->elements)
         {
             printf("temp->array_elements is null");
             return false;
         }
-        temp = (*temp->array_elements)[val];
+        temp = dynamic_cast<ArrayType *>((*temp->elements)[val]);
+        if (!temp)
+        {
+            printf("error during dynamic_cast !\n");
+            return false;
+        }
         it++;
     }
 
     size = temp->size;
     rvNode = (*values)[it];
-    auto convert = dynamic_cast<intValueNode *>(rvNode);
+    auto convert = dynamic_cast<IntType *>(rvNode);
     if (!convert)
     {
         printf("%dth indexing is not a integer value\n", it + 1);
@@ -373,20 +523,105 @@ bool arrayIndexing::checkIndexes()
     indexing += "[" + to_string(val) + "]";
     if (val < 0 || val >= size)
     {
-        printf("%dth indexing [%d] is out of range\n", it + 1, val);
+        printf("%dth indexing [%d] is out of range[%d]\n", it + 1, val, size);
         return false;
     }
     printf("%s corect indexing of a\n", indexing.c_str());
     return true;
 }
 
-intValueNode::intValueNode(string cont) : rvalueNode(cont, INT)
-{
-    value = atoi(cont.c_str());
-}
-
 void myVectorClass::add_pointer(void *ptr)
 {
     printf("pushed back %p\n", ptr);
     pointers.push_back(ptr);
+}
+
+ArrayType::ArrayType(string str, int iteration) : TypeNode(str)
+{
+    elements = nullptr;
+    buildFromStack(iteration);
+}
+
+ArrayType::~ArrayType()
+{
+    for (auto el : *elements)
+    {
+        delete el;
+    }
+    delete elements;
+}
+
+ArrayType *ArrayType::arrayBuiltFromStack = nullptr;
+
+void ArrayType::buildFromStack(int it)
+{
+    if (it == 0)
+    {
+        printf("array type = ");
+        printType(arrayType);
+        printf("\ndimensions : ");
+        for (auto &el : arrayStack)
+        {
+            printf("%d,", el);
+        }
+        printf("\n");
+    }
+
+    int n = arrayStack.size();
+    this->type = types::ARRAY;
+    el_type = types::ARRAY;
+    this->size = arrayStack[it];
+    this->dimension = n - it;
+
+    if (n == (it + 1))
+    {
+        types base_type;
+        vector<TypeNode *> *bottom_elements;
+        switch (arrayType)
+        {
+        case FLOAT:
+            // printf("float\n");
+            base_type = types::FLOAT;
+            bottom_elements = new vector<TypeNode *>(this->size, new FloatType());
+            break;
+        case INT:
+            base_type = types::INT;
+            // printf("int\n");
+            bottom_elements = new vector<TypeNode *>(this->size, new IntType("0"));
+            break;
+        case CHAR:
+            base_type = types::CHAR;
+            // printf("char\n");
+            bottom_elements = new vector<TypeNode *>(this->size, new CharType());
+            break;
+        case STRING:
+            break;
+        default:
+            break;
+        }
+        elements = bottom_elements;
+        el_type = base_type;
+    }
+    else
+    {
+        elements = new vector<TypeNode *>(this->size, new ArrayType("", it + 1));
+    }
+    if (it == 0)
+    {
+        arrayStack.clear();
+    }
+}
+
+IntType::IntType(string s)
+{
+    value = atoi(s.c_str());
+}
+
+bool IntType::add(TypeNode *other)
+{
+
+    auto t2 = dynamic_cast<IntType *>(other);
+
+    this->value += t2->value;
+    return true;
 }

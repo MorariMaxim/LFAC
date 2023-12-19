@@ -6,9 +6,11 @@
 #include <vector>
 #include <unordered_map>
 class symbolTalbeNode;
-class expressionNode;
+class ExpressionNode;
 class functionNode;
 class myVectorClass;
+class TypeNode;
+class ArrayType;
 using namespace std;
 
 #define checkInsertion(...)                                                                      \
@@ -35,6 +37,7 @@ enum types
     STRING,
     VOID,
     OTHER,
+    ARRAY,
     USER_TYPE
 };
 

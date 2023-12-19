@@ -1,6 +1,6 @@
     * urgent 
     types 
-better to store the type, need a better typenode
+better to store the type, need a better TypeNode
 can actually access element of an array and of a class;
 
     classes

@@ -6,39 +6,21 @@ class Symbol
 {
 public:
     string name;    
+    TypeNode* typen = nullptr;
     types type;
     symbolTalbeNode * classType = nullptr;
     bool isConst;
     bool isInit;
-    expressionNode * value;
+    ExpressionNode * value;
 
-    Symbol(bool isConst_, types type_,string name_, expressionNode* value_);
-    void setTo(bool isConst_, types type_,string name_, expressionNode* value_);
+    Symbol(bool isConst_, types type_,string name_, ExpressionNode* value_);
+    void setTo(bool isConst_, types type_,string name_, ExpressionNode* value_);
     Symbol();
     virtual ~Symbol();
 
-    virtual void printSymbol();
-    virtual string getSymbolAsString();
-};
-class arraySymbol: public Symbol{
-public:
-    int size;
-    bool bottom;
-    int dimension;
-    union 
-    {
-        vector<arraySymbol*> *array_elements;
-        vector<float> *float_elements;
-        vector<int> *int_elements;
-        vector<char> *char_elements;
-    };        
-    arraySymbol();
-    ~arraySymbol();
     void printSymbol();
-    static arraySymbol * buildFromStack(int it);
-    static arraySymbol * arrayBuiltFromStack;
-
-};
+    string getSymbolAsString();
+}; 
 
 
 class symbolTalbeNode
@@ -73,11 +55,13 @@ public:
     Symbol* is_user_symbol_defined(generalNode * id );
     int check_member_access( generalNode * id, generalNode * member_id );
 
-    int defineSymbol(bool isConst_, types type_, string name_, expressionNode *value_);
+    int defineSymbol(bool isConst_, types type_, string name_, ExpressionNode *value_);
     int defineSymbol(string name, Symbol* symbol);
     int defineSymbol(Symbol* symbol);
-    Symbol* create_temp_symbol(expressionNode *value_);
-    int defineUserSymbol(generalNode * classId, generalNode * symbolName);
+    int define_array_symbol(string name,ArrayType* at);
+    Symbol* create_temp_symbol(ExpressionNode *value_);
+    Symbol* define_user_symbol(generalNode * classId, generalNode * symbolName);
+    Symbol* define_user_symbol(generalNode * classId, generalNode * symbolName, myVectorClass * init);
 
     symbolTalbeNode* addFunction(functionNode * newScope);
     

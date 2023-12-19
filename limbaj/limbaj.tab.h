@@ -80,8 +80,8 @@ union YYSTYPE
 #line 29 "limbaj.y"
 
     class generalNode* node; 
-    class typeNode* typenode;
-    class expressionNode* exprnode;
+    class TypeNode* TypeNode;
+    class ExpressionNode* exprnode;
     class Symbol * parameterNode;
     class functionNode* funcNode;
     class parameterList* parListNode;

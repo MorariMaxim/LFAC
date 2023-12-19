@@ -20,7 +20,7 @@ visibilityType currentVisibility = PUBLIC;
 "const" {yylval.node = new generalNode(yytext);col+=yyleng; return CONST;}
 
 
-"int"|"float"|"char"|"string"|"void" {printx("type"); yylval.typenode = new typeNode(yytext); col+=yyleng; return TYPE; } 
+"int"|"float"|"char"|"string"|"void" {printx("type"); yylval.TypeNode = new TypeNode(yytext); col+=yyleng; return TYPE; } 
 "begin_progr" {printx("a1\n");yylval.node = new generalNode(yytext);col+=yyleng; return BGIN;}
 "end_progr" {printx("a2\n");yylval.node = new generalNode(yytext);col+=yyleng; return END;}
 [a-zA-Z][a-zA-Z0-9]* {printx("ID");yylval.node = new generalNode(yytext,row,col); col+=yyleng; return ID;}

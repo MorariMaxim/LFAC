@@ -28,8 +28,8 @@ string join_buffer;
 
 %union {
     class generalNode* node; 
-    class typeNode* typenode;
-    class expressionNode* exprnode;
+    class TypeNode* TypeNode;
+    class ExpressionNode* exprnode;
     class Symbol * parameterNode;
     class functionNode* funcNode;
     class parameterList* parListNode;
@@ -44,9 +44,9 @@ string join_buffer;
 
 
 %token<node>  BGIN END ASSIGN NR ID IF ELSE WHILE FOR  CONST RARROW FN RETURN CLASS
-%token<typenode> TYPE 
+%token<TypeNode> TYPE 
 
-%type<node>     declaration IF_S IF_B statement statements IF_ELSE_S IF_ELSE_B assignment lval ISCONST ARRAY decls_funcs member_access 
+%type<node>     class_declaration declaration IF_S IF_B statement statements IF_ELSE_S IF_ELSE_B assignment lval ISCONST ARRAY decls_funcs member_access 
 %type<exprnode> expr
 %type<parameterNode> parameter 
 %type<parListNode> parameter_List
@@ -56,7 +56,7 @@ string join_buffer;
 %type<rvaluesNode> rvalues 
 %type <arrayIndexingNode> array_indexing
 %type <classNode> class_b class_s
-%type <container> id_parameters
+%type <container> id_parameters field_val
 %start progr
 
 
@@ -99,13 +99,20 @@ declaration:
                                             currentSymbolTable->defineSymbol(0,$1->type,$2->content,$4);  $$ = new generalNode($1->content + " " + $2->content+ " = " + $4->content); delete $1; delete $2; delete $4;}
         | TYPE ID  { printx("\ndecl->type id;\n");
                                         currentSymbolTable->defineSymbol(0,$1->type,$2->content,nullptr);  $$ = new generalNode($1->content + " " + $2->content); delete $1; delete $2;}        
-        | ARRAY  { printx("\ndecl -> array\n");printf("array name : %s\n",$1->content.c_str());arraySymbol * as = arraySymbol::buildFromStack(0);currentSymbolTable->defineSymbol($1->content,as); $$ = $1;}
-
-        | ID ID  {printx("\ndecl -> ID ID ;\n");currentSymbolTable->defineUserSymbol($1,$2); }
-        
+        | ARRAY  { printx("\ndecl -> array\n");printf("array name : %s\n",$1->content.c_str());ArrayType * at = new ArrayType("",0);currentSymbolTable->define_array_symbol($1->content,at); $$ = $1;}
+        | class_declaration {printx("\n declaration -> class_declaration \n");}
         ;
-
+class_declaration: 
+         ID ID  {printx("\n dclass_Declaration -> uninitialized \n");currentSymbolTable->define_user_symbol($1,$2);}
         
+        | ID ID '(' field_val ')' {printx("\n dclass_Declaration -> initialized\n");currentSymbolTable->define_user_symbol($1,$2,$4);}
+        
+field_val: ID ':' rval {printx("\nfield_Val -> ID : rval\n"); $$ = new myVectorClass(); $$->add_pointer($1);$$->add_pointer($3);}
+        | field_val ',' ID ':' rval {printx("\nfield_Val -> field_val , ID : rval\n"); $$ = $1; $$->add_pointer($3);$$->add_pointer($5);}
+
+
+
+
 ARRAY: TYPE ID '[' NR ']' { printx("\narray -> type id [ nr ]\n"); $$ = $2; arrayType=$1->type; arrayStack.push_back(atoi($4->content.c_str()));}
         | ARRAY '[' NR ']' { printx("\narray -> array [ nr ]\n"); $$ = $1;arrayStack.push_back(atoi($3->content.c_str()));}
 
@@ -153,10 +160,10 @@ parameter_List: parameter_List ','  parameter {printx("parameter list -> paramet
 parameter: TYPE ID { printx("\nparamter -> type id"); $$ = new Symbol(0,$1->type,$2->content,nullptr);}
         ;
 
-expr:     expr '+' expr { printx("\nexpr -> expr + expr\n");$$ = new expressionNode(operTypes::plus,$1,$3, $1->content +"+" + $3->content);  } 
-        | expr '-' expr { printx("\nexpr -> expr - expr\n");$$ = new expressionNode(operTypes::minus,$1,$3, $1->content +"-" + $3->content);  } 
-        | ID {printf("\nexpr -> ID\n");$$ = new expressionNode(nullptr, $1->content); delete $1;}; 
-        | NR {printf("\nexpr -> NR\n");$$ = new expressionNode(nullptr, $1->content); delete $1;};  
+expr:     expr '+' expr { printx("\nexpr -> expr + expr\n");$$ = new ExpressionNode(OperTypes::ADD,$1,$3, $1->content +"+" + $3->content);  } 
+        | expr '-' expr { printx("\nexpr -> expr - expr\n");$$ = new ExpressionNode(OperTypes::SUB,$1,$3, $1->content +"-" + $3->content);  } 
+        | ID {printf("\nexpr -> ID\n");$$ = new ExpressionNode(nullptr, $1->content); delete $1;}; 
+        | NR {printf("\nexpr -> NR\n");$$ = new ExpressionNode(nullptr, $1->content); delete $1;};  
         ;
 
 assignment: lval '=' rval  { $$ = new generalNode($1->content +"=" + $3->content); delete $1; delete $3;}
@@ -166,7 +173,7 @@ lval: ID        {printx("lval -> id\n"); checkSymbol($1);  }
  
 rval:   
          expr    {printx("\nrval -> expression\n"); Symbol* _res = currentSymbolTable->create_temp_symbol($1);
-                 $$ = new rvalueNode("temp node"); }
+                 $$ = new IntType($1->content);}
         ;
 ISCONST : CONST {printx("isconst -> const\n");$$ = $1;} 
         ;
@@ -194,6 +201,8 @@ class_b:  class_s decls_funcs '}' {printx("\nclassb -> class_S decls_funcs } \n"
         | class_s '}' {printx("\nclassb -> class_S } \n");backtrackScope();}
         ;
 member_access: ID '.' ID {printx("\nmember_access -> ID . ID \n"); currentSymbolTable->check_member_access($1,$3); $$ = new generalNode("member accsss");}
+
+
 
 %%
  

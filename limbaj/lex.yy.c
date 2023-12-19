@@ -842,7 +842,7 @@ YY_RULE_SETUP
 case 12:
 YY_RULE_SETUP
 #line 23 "limbaj.l"
-{printx("type"); yylval.typenode = new typeNode(yytext); col+=yyleng; return TYPE; } 
+{printx("type"); yylval.TypeNode = new TypeNode(yytext); col+=yyleng; return TYPE; } 
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
@@ -1159,7 +1159,7 @@ static int yy_get_next_buffer (void)
 		ret_val = EOB_ACT_CONTINUE_SCAN;
 
 	if (((yy_n_chars) + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
-		/* Extend the array by 50%, plus the number we really need. */
+		/* Extend the array by 50%, PLUS the number we really need. */
 		int new_size = (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
 		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) yyrealloc(
 			(void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf, (yy_size_t) new_size  );

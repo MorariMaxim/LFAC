@@ -53,7 +53,7 @@ string getTypeAsStr(types type)
     }
 }
 
-Symbol::Symbol(bool isConst_, types type_, string name_, expressionNode *value_)
+Symbol::Symbol(bool isConst_, types type_, string name_, ExpressionNode *value_)
 {
     isConst = isConst_;
     type = type_;
@@ -61,7 +61,7 @@ Symbol::Symbol(bool isConst_, types type_, string name_, expressionNode *value_)
     value = value_;
 }
 
-void Symbol::setTo(bool isConst_, types type_, string name_, expressionNode *value_)
+void Symbol::setTo(bool isConst_, types type_, string name_, ExpressionNode *value_)
 {
     isConst = isConst_;
     type = type_;
@@ -88,14 +88,38 @@ void Symbol::printSymbol()
     {
         if (classType)
         {
-            printf("%s", classType->name.c_str());
+            printf("%s %s", classType->name.c_str(),name.c_str());
         }
+    }
+    else if (type == types::ARRAY)
+    {
+        ArrayType *temp = dynamic_cast<ArrayType *>(typen);
+        if (!temp)
+        {
+            printf("dynamic cast failed\n");
+            return;
+        }
+
+        printf(" %s[%d]", this->name.c_str(), temp->size);
+
+        while (temp->dimension != 1)
+        {
+            temp = dynamic_cast<ArrayType *>((*temp->elements)[0]);
+            if (!temp)
+            {
+                printf("dynamic cast failed\n");
+                return;
+            }
+
+            printf("[%d]", temp->size);
+        }
+        printf("\n");
     }
     else
     {
-        printType(this->type);
+        printf("%s %s\n",getTypeAsStr(type).c_str(),name.c_str());
+        
     }
-    printf(" %s\n", this->name.c_str());
 }
 
 string Symbol::getSymbolAsString()
@@ -145,8 +169,9 @@ void symbolTalbeNode::printTable(int depth)
     for (auto &symbol : symbols)
     {
         indent(depth + 1);
+
         symbol.second->printSymbol();
-    }        
+    }
 }
 
 Symbol *symbolTalbeNode::isSymbolDefinedInPath(string name)
@@ -171,7 +196,7 @@ Symbol *symbolTalbeNode::isSymbolDefinedInPath(string name)
     return nullptr;
 }
 
-int symbolTalbeNode::defineSymbol(bool isConst_, types type_, string name_, expressionNode *value_)
+int symbolTalbeNode::defineSymbol(bool isConst_, types type_, string name_, ExpressionNode *value_)
 {
     auto it = symbols.find(name_);
 
@@ -225,7 +250,7 @@ symbolTalbeNode *symbolTalbeNode::addScope(string name)
     return newScope;
 }
 
-int symbolTalbeNode::defineUserSymbol(generalNode *classId, generalNode *symbolName)
+Symbol *symbolTalbeNode::define_user_symbol(generalNode *classId, generalNode *symbolName)
 {
     Symbol *sym = new Symbol();
 
@@ -233,7 +258,7 @@ int symbolTalbeNode::defineUserSymbol(generalNode *classId, generalNode *symbolN
     if (!cl)
     {
         printf("%s isn't a user defined type\n", classId->content.c_str());
-        return false;
+        return nullptr;
     }
     sym->type = USER_TYPE;
     sym->classType = cl;
@@ -244,7 +269,41 @@ int symbolTalbeNode::defineUserSymbol(generalNode *classId, generalNode *symbolN
         printf(" symbol (%s) is already defined\n", sym->name.c_str());
     }
     symbols.emplace(sym->name, sym);
-    return true;
+    return sym;
+}
+
+Symbol *symbolTalbeNode::define_user_symbol(generalNode *classId, generalNode *symbolName, myVectorClass *init)
+{
+    Symbol *sym = define_user_symbol(classId, symbolName);
+    if (!sym)
+        return nullptr;
+
+    int size = init->pointers.size();
+
+    if (size & 1)
+    {
+        printf("invalid initialization seuqence, odd size\n");
+        return nullptr;
+    }
+
+    for (int i = 0; i < size / 2; i++)
+    {
+        auto id = (generalNode *)(init->pointers[i]);
+        auto val = (TypeNode *)(init->pointers[i + 1]);
+
+        auto field =  sym->classType->isLocallyDefined(id->content);
+
+        if(!field) {
+            printf("no %s field\n",id->content.c_str());
+            return nullptr;
+        }
+
+        //to do: check the types
+
+        field->typen = val;
+    }
+
+    return sym;
 }
 
 Symbol *symbolTalbeNode::is_user_symbol_defined(generalNode *id)
@@ -265,7 +324,6 @@ Symbol *symbolTalbeNode::is_user_symbol_defined(generalNode *id)
     return sym;
 }
 
-
 void symbolTalbeNode::setAsFunction(functionNode *funcNode)
 {
     name = funcNode->name;
@@ -273,10 +331,9 @@ void symbolTalbeNode::setAsFunction(functionNode *funcNode)
     type = FUNC_SCOPE;
 }
 
-Symbol *symbolTalbeNode::create_temp_symbol(expressionNode *value)
+Symbol *symbolTalbeNode::create_temp_symbol(ExpressionNode *value)
 {
-    Symbol * temp_symbol = new Symbol (0,types::OTHER,"",value);
-
+    Symbol *temp_symbol = new Symbol(0, types::OTHER, "", value);
 
     temp_symbols.insert(temp_symbol);
 
@@ -339,6 +396,19 @@ int symbolTalbeNode::defineSymbol(Symbol *symbol)
     return true;
 }
 
+int symbolTalbeNode::define_array_symbol(string name, ArrayType *at)
+{
+    if (isLocallyDefined(name))
+        return false;
+
+    Symbol *as = new Symbol(0, types::ARRAY, name, nullptr);
+    as->typen = at;
+
+    printf("Trying to insert %s\n", name.c_str());
+    checkInsertion(symbols.emplace(name, as));
+    return true;
+}
+
 int symbolTalbeNode::defineSymbol(string name_, Symbol *symbol)
 {
     auto it = symbols.find(name_);
@@ -353,7 +423,7 @@ int symbolTalbeNode::defineSymbol(string name_, Symbol *symbol)
 }
 
 Symbol *symbolTalbeNode::isLocallyDefined(string name)
-{ 
+{
     auto it = symbols.find(name);
 
     if (it != symbols.end())
@@ -362,144 +432,22 @@ Symbol *symbolTalbeNode::isLocallyDefined(string name)
     return nullptr;
 }
 
-arraySymbol::arraySymbol() : Symbol()
-{
-    array_elements = nullptr;
-    float_elements = nullptr;
-    int_elements = nullptr;
-    char_elements = nullptr;
-}
-
-arraySymbol::~arraySymbol()
-{
-    if (bottom)
-    {
-        switch (type)
-        {
-        case FLOAT:
-            printf("float\n");
-            delete float_elements;
-            break;
-        case INT:
-            printf("int\n");
-            delete int_elements;
-            break;
-        case CHAR:
-            printf("char\n");
-            delete char_elements;
-            break;
-        case STRING:
-            break;
-        default:
-            printf("OTHER");
-            break;
-        }
-    }
-    else
-    {
-        for (auto ptr : *array_elements)
-        {
-            delete ptr;
-        }
-        delete array_elements;
-    }
-}
-
-void arraySymbol::printSymbol()
-{
-    printType(this->type);
-    printf(" %s[%d]", this->name.c_str(), this->size);
-    arraySymbol *temp = this;
-
-    while (temp->bottom != 1)
-    {
-        temp = (*temp->array_elements)[0];
-        printf("[%d]", temp->size);
-    }
-    printf("\n");
-}
-
-arraySymbol *arraySymbol::arrayBuiltFromStack = nullptr;
-
-arraySymbol *arraySymbol::buildFromStack(int it)
-{
-    arraySymbol *temp;
-    if (it == 0)
-    {
-        printf("array type = ");
-        printType(arrayType);
-        printf("\ndimensions : ");
-        for (auto &el : arrayStack)
-        {
-            printf("%d,", el);
-        }
-        printf("\n");
-
-        arrayBuiltFromStack = new arraySymbol();
-        temp = arrayBuiltFromStack;
-    }
-    else
-        temp = new arraySymbol();
-
-    // printf("it = %d\n", it);
-    int n = arrayStack.size();
-    temp->type = arrayType;
-    temp->size = arrayStack[it];
-    temp->dimension = n - it;
-    if (n == (it + 1))
-    {
-        temp->bottom = 1;
-        switch (arrayType)
-        {
-        case FLOAT:
-            // printf("float\n");
-            temp->float_elements = new vector<float>(temp->size, 0.0f);
-            break;
-        case INT:
-            // printf("int\n");
-            temp->int_elements = new vector<int>{temp->size, 0};
-            break;
-        case CHAR:
-            // printf("char\n");
-            temp->char_elements = new vector<char>(temp->size, 'A');
-            break;
-        case STRING:
-            break;
-        default:
-            break;
-        }
-    }
-    else
-    {
-        temp->bottom = 0;
-        temp->array_elements = new vector<arraySymbol *>;
-        for (int i = 0; i < temp->size; i++)
-        {
-            temp->array_elements->push_back(buildFromStack(it + 1));
-        }
-    }
-    if (it == 0)
-    {
-        arrayStack.clear();
-    }
-    return temp;
-}
-
 int symbolTalbeNode::check_member_access(generalNode *id, generalNode *member_id)
 {
-    Symbol * sym = is_user_symbol_defined(id);
+    Symbol *sym = is_user_symbol_defined(id);
 
-    if(!sym) return -1;
+    if (!sym)
+        return -1;
 
     auto clas = sym->classType;
-    /*    
+    /*
     if (clas == nullptr)
     {
         printf("%s class is not defined \n", sym->classType->name.c_str());
         return -1;
     }*/
 
-    if (! clas->isLocallyDefined(member_id->content))
+    if (!clas->isLocallyDefined(member_id->content))
     {
         printf("no %s member\n", member_id->content.c_str());
         return -1;
