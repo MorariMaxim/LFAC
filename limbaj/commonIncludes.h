@@ -8,6 +8,7 @@
 class symbolTalbeNode;
 class expressionNode;
 class functionNode;
+class myVectorClass;
 using namespace std;
 
 #define checkInsertion(...)                                                                      \

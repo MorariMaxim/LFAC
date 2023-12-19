@@ -894,7 +894,7 @@ YY_RULE_SETUP
 case 22:
 YY_RULE_SETUP
 #line 34 "limbaj.l"
-{printx("else\n");yylval.node = new generalNode(yytext);col+=yyleng; return yytext[0];}
+{string s = ""; s+=yytext[0] ;printx(s);yylval.node = new generalNode(yytext);col+=yyleng; return yytext[0];}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP

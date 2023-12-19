@@ -177,41 +177,78 @@ void functionNode::setSignature()
 
 bool functionCall::checkCall()
 {
-    if (functionName == nullptr){
+    if (functionName == nullptr)
+    {
         printf("name == nulptr\n");
         return false;
     }
-        
 
     auto parameters = functionName->parameters;
 
     if (((parameters == nullptr) && (args->size() != 0)) ||
         ((parameters != nullptr) && (args->size() != parameters->size())))
-        {
-            printf("((parameters == nullptr) && (args->size() != 0)) || ((parameters != nullptr) && (args->size() != parameters->size()))\n");
-            return false;}
+    {
+        printf("((parameters == nullptr) && (args->size() != 0)) || ((parameters != nullptr) && (args->size() != parameters->size()))\n");
+        return false;
+    }
 
     int size = args->size();
     for (int i = 0; i < size; i++)
     {
         if ((*args)[i]->type != (*parameters)[i]->type)
         {
-            printf("args[%d].type (%s) != pars[%d].type (%s)\n",i,getTypeAsStr((*args)[i]->type).c_str(),i,getTypeAsStr((*parameters)[i]->type).c_str());
+            printf("args[%d].type (%s) != pars[%d].type (%s)\n", i, getTypeAsStr((*args)[i]->type).c_str(), i, getTypeAsStr((*parameters)[i]->type).c_str());
             return false;
         }
     }
     return true;
 }
 
-functionCall::functionCall(string funcName)
+functionCall::functionCall(generalNode *scope_id, myVectorClass *rest)
 {
-    args = new vector<rvalueNode *>();
-    auto res = currentSymbolTable->isFuncDefined(funcName);
-    functionName = res;
-    if (res == nullptr)
-        printf("not found such function\n");
+    symbolTalbeNode *scope = currentSymbolTable;
+
+    Symbol *sym = nullptr;
+    if (scope_id)
+    {
+        sym = scope->is_user_symbol_defined(scope_id);
+    }
+
+    if (!sym)
+        return;
+
+    if (!rest)
+    {
+        printf("for some reason rest is null");
+        return;
+    }
+
+    generalNode *id = (generalNode *)(rest->pointers[0]);
+
+    scope = sym->classType;
+
+    if (!id)
+        return;
+
+    auto funcnode = scope->isFuncDefined(id->content);
+
+    if (funcnode == nullptr)
+    {
+        printf("found no such function\n");
+        return ;
+    }
+        
     else
         printf("found such function\n");
+
+    functionName = funcnode;
+    
+    args = new vector<rvalueNode *>();
+
+    if (rest->pointers.size() > 1)
+    {
+        this->setArgs((rValueNodes *)(rest->pointers[1]));
+    }
 }
 
 void functionCall::setArgs(rValueNodes *rvals)
@@ -295,11 +332,11 @@ bool arrayIndexing::checkIndexes()
     int it = 0;
     int val;
     string indexing = "";
-    rvalueNode *rvNode;    
+    rvalueNode *rvNode;
     while (it != min)
     {
         size = temp->size;
-        //printf("size = %d\n",size);
+        // printf("size = %d\n",size);
         rvNode = (*values)[it];
         auto convert = dynamic_cast<intValueNode *>(rvNode);
         if (!convert)
@@ -308,7 +345,7 @@ bool arrayIndexing::checkIndexes()
             return false;
         }
         val = convert->value;
-        indexing +="["+ to_string(val)+"]";
+        indexing += "[" + to_string(val) + "]";
 
         if (val < 0 || val >= size)
         {
@@ -331,15 +368,15 @@ bool arrayIndexing::checkIndexes()
     {
         printf("%dth indexing is not a integer value\n", it + 1);
         return false;
-    }    
+    }
     val = convert->value;
-    indexing +="["+ to_string(val)+"]";
+    indexing += "[" + to_string(val) + "]";
     if (val < 0 || val >= size)
     {
         printf("%dth indexing [%d] is out of range\n", it + 1, val);
         return false;
     }
-    printf("%s corect indexing of a\n",indexing.c_str());
+    printf("%s corect indexing of a\n", indexing.c_str());
     return true;
 }
 
@@ -348,7 +385,8 @@ intValueNode::intValueNode(string cont) : rvalueNode(cont, INT)
     value = atoi(cont.c_str());
 }
 
-void myVectorClass::addPointer(void *ptr)
+void myVectorClass::add_pointer(void *ptr)
 {
+    printf("pushed back %p\n", ptr);
     pointers.push_back(ptr);
 }

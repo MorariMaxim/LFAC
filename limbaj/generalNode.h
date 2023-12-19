@@ -83,7 +83,7 @@ public:
     functionNode *functionName;
     vector<rvalueNode *> *args;
     bool checkCall();
-    functionCall(string funcName);
+    functionCall(generalNode* scope, myVectorClass * rest);
     void setArgs(rValueNodes *rvals);
     void addRvalue(rvalueNode *rval);
 };
@@ -120,6 +120,8 @@ class myVectorClass {
 public: 
     std::vector<void*> pointers;
     
-    void addPointer(void * ptr);
+    void add_pointer(void * ptr);
+
+      
 };
 #endif

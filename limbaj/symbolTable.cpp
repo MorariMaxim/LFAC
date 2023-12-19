@@ -130,10 +130,9 @@ void symbolTalbeNode::printTable(int depth)
         printf("%s\n", funcNode->signature.c_str());
     else
         printf("%s\n", this->name.c_str());
-    for (auto &symbol : symbols)
+    for (auto &child : classes)
     {
-        indent(depth + 1);
-        symbol.second->printSymbol();
+        child.second->printTable(depth + 1);
     }
     for (auto &child : functions)
     {
@@ -143,10 +142,11 @@ void symbolTalbeNode::printTable(int depth)
     {
         child.second->printTable(depth + 1);
     }
-    for (auto &child : classes)
+    for (auto &symbol : symbols)
     {
-        child.second->printTable(depth + 1);
-    }
+        indent(depth + 1);
+        symbol.second->printSymbol();
+    }        
 }
 
 Symbol *symbolTalbeNode::isSymbolDefinedInPath(string name)
@@ -220,7 +220,7 @@ symbolTalbeNode *symbolTalbeNode::addScope(string name)
 {
     symbolTalbeNode *newScope = new symbolTalbeNode(name);
     newScope->parent = this;
-    children.push_back(newScope);
+    checkInsertion(other.emplace(newScope->name, newScope));
 
     return newScope;
 }
@@ -247,11 +247,40 @@ int symbolTalbeNode::defineUserSymbol(generalNode *classId, generalNode *symbolN
     return true;
 }
 
+Symbol *symbolTalbeNode::is_user_symbol_defined(generalNode *id)
+{
+    auto sym = isSymbolDefinedInPath(id->content);
+
+    if (!sym)
+    {
+        printf("%s is not defined \n", id->content.c_str());
+        return nullptr;
+    }
+
+    if (sym->type != USER_TYPE || sym->classType == nullptr)
+    {
+        printf("%s's type is not a class \n", id->content.c_str());
+        return nullptr;
+    }
+    return sym;
+}
+
+
 void symbolTalbeNode::setAsFunction(functionNode *funcNode)
 {
     name = funcNode->name;
     this->funcNode = funcNode;
     type = FUNC_SCOPE;
+}
+
+Symbol *symbolTalbeNode::create_temp_symbol(expressionNode *value)
+{
+    Symbol * temp_symbol = new Symbol (0,types::OTHER,"",value);
+
+
+    temp_symbols.insert(temp_symbol);
+
+    return temp_symbol;
 }
 
 functionNode *symbolTalbeNode::isFuncDefined(string name)
@@ -324,7 +353,7 @@ int symbolTalbeNode::defineSymbol(string name_, Symbol *symbol)
 }
 
 Symbol *symbolTalbeNode::isLocallyDefined(string name)
-{
+{ 
     auto it = symbols.find(name);
 
     if (it != symbols.end())
@@ -458,32 +487,21 @@ arraySymbol *arraySymbol::buildFromStack(int it)
 
 int symbolTalbeNode::check_member_access(generalNode *id, generalNode *member_id)
 {
+    Symbol * sym = is_user_symbol_defined(id);
 
-    auto sym = isSymbolDefinedInPath(id->content);
+    if(!sym) return -1;
 
-    if (!sym)
-    {
-        printf("%s is not defined \n", id->content.c_str());
-        return -1;
-    }
-
-    if (sym->type != USER_TYPE || sym->classType == nullptr)
-    {
-        printf("%s's type is not a class \n", id->content.c_str());
-        return -1;
-    }
-
-    auto clas = isClassDefined(sym->classType->name);
-
+    auto clas = sym->classType;
+    /*    
     if (clas == nullptr)
     {
         printf("%s class is not defined \n", sym->classType->name.c_str());
         return -1;
-    }
+    }*/
 
-    if (!isLocallyDefined(member_id->content))
+    if (! clas->isLocallyDefined(member_id->content))
     {
-        printf("%s class is not defined \n", sym->classType->name.c_str());
+        printf("no %s member\n", member_id->content.c_str());
         return -1;
     }
     printf("correct member access\n");

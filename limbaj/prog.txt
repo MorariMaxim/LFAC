@@ -1,7 +1,17 @@
-int a;
+class temp {
+    int b;
+
+    fn func() -> void {
+
+    }
+}
+temp a ;
+a.b ;
+a.func();
 
 
 #
+
 class Person {
 private:
     int a;
@@ -25,17 +35,17 @@ public:
 fn func1(int a, int x, float b ) -> int {
     int x;
     float a; 
-    func1(a,x,b) // its says type of a (float) != int, because a redefined, try remove the preceding line
+    func1(a,x,b);
     return x
 }
 int a;
 float b;
-func1(a, a,b)
+func1(a, a,b);
 int     a = a+b;
 float   e;
 string m;
 
-a + b + c
+a + b + c; 
 if (  a+b    ) {
 
 int b;
@@ -44,4 +54,6 @@ int c;
 else {
 
     int x;
-}#
+}
+a = a + b;
+#

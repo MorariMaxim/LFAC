@@ -1,7 +1,7 @@
 #ifndef symbolTable_H
 #define symbolTable_H
 #include "commonIncludes.h"  
-
+#include <unordered_set>
 class Symbol  
 {
 public:
@@ -56,6 +56,8 @@ public:
     unordered_map<string,symbolTalbeNode*> classes;
     unordered_map<string,symbolTalbeNode*> other;
 
+    unordered_set<Symbol*> temp_symbols;
+
     symbolTalbeNode(string name);
     
     symbolTalbeNode* newClass(generalNode * gn);
@@ -68,11 +70,13 @@ public:
     functionNode* isFuncDefined(string name);
     symbolTalbeNode * isClassDefined(string name);
 
+    Symbol* is_user_symbol_defined(generalNode * id );
     int check_member_access( generalNode * id, generalNode * member_id );
 
     int defineSymbol(bool isConst_, types type_, string name_, expressionNode *value_);
     int defineSymbol(string name, Symbol* symbol);
     int defineSymbol(Symbol* symbol);
+    Symbol* create_temp_symbol(expressionNode *value_);
     int defineUserSymbol(generalNode * classId, generalNode * symbolName);
 
     symbolTalbeNode* addFunction(functionNode * newScope);

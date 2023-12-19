@@ -31,5 +31,5 @@ visibilityType currentVisibility = PUBLIC;
 \n {printx("NL\n");row++;col=1;}
 
 [\{\}\(\);=\[\]] {printf("%c",yytext[0]);yylval.node = new generalNode(yytext);col+=yyleng; return yytext[0];}
-. {printx("else\n");yylval.node = new generalNode(yytext);col+=yyleng; return yytext[0];}
+. {string s = ""; s+=yytext[0] ;printx(s);yylval.node = new generalNode(yytext);col+=yyleng; return yytext[0];}
 
