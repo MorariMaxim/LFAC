@@ -16,8 +16,8 @@ types arrayType;
 class generalNode; 
 types returnType;
 
-#define checkSymbol(x) {if ( currentSymbolTable->isSymbolDefinedInPath(x->content)==nullptr) printf("\nsymbol not defined %s at %d:%d\n",x->content.c_str(),x->row,x->col); }
-#define getSymbol(x) {currentSymbolTable->isSymbolDefinedInPath(x->content)}
+#define checkSymbol(x) {if ( currentSymbolTable->is_symbol_defined_in_path(x->content)==nullptr) printf("\nsymbol not defined %s at %d:%d\n",x->content.c_str(),x->row,x->col); }
+#define getSymbol(x) {currentSymbolTable->is_symbol_defined_in_path(x->content)}
 #define checkRetType(x) {if (x->type != returnType){printf("incorrect return type");} else printf("correct return type");}
 #define checkVoidReturn() {if (returnType != VOID) printf("incorrect return type"); else printf("correct return type");}
 #define backtrackScope() {currentSymbolTable = currentSymbolTable->getParent();}
@@ -39,15 +39,18 @@ string join_buffer;
     class arrayIndexing * arrayIndexingNode;
     class symbolTalbeNode* classNode; 
     class myVectorClass* container;
+    class IntType * int_type_node;
 }
 
 
 
-%token<node>  BGIN END ASSIGN NR ID IF ELSE WHILE FOR  CONST RARROW FN RETURN CLASS
+%token<node>  BGIN END ASSIGN ID IF ELSE WHILE FOR  CONST RARROW FN RETURN CLASS EVAL
+%token<int_type_node> INT_NR
 %token<TypeNode> TYPE 
 
-%type<node>     class_declaration declaration IF_S IF_B statement statements IF_ELSE_S IF_ELSE_B assignment lval ISCONST ARRAY decls_funcs member_access 
-%type<exprnode> expr
+%type<TypeNode> const_type member_access
+%type<node>     class_declaration declaration IF_S IF_B statement statements IF_ELSE_S IF_ELSE_B assignment lval ISCONST ARRAY decls_funcs eval_expression
+%type<exprnode> expr init
 %type<parameterNode> parameter 
 %type<parListNode> parameter_List
 %type<funcNode> function_s function 
@@ -74,7 +77,7 @@ statements: statement  { $$ = $1; printx("\nstatements -> statement\n");}
         | statements statement  { $$ = $1; printx("\nstatements -> statements statement\n");}
 
 statement:
-          declaration ';' { printx("\nstmt -> declaration\n");}
+          declaration { printx("\nstmt -> declaration\n");}
         | expr ';'  { printx("\nstmt -> expr\n");}
         | IF_B { printx("\nstmt -> IF_B\n");}
         | IF_ELSE_B { printx("\nstatement -> IF_ELSE_B\n");}
@@ -83,41 +86,36 @@ statement:
         | function_call ';'  {printx("statement -> functionCall\n");}
         | array_indexing ';' {printx("statement -> array_indexing\n");$1->checkIndexes();}
         | class_b {printx("statement -> class_b\n");}
-        | member_access ';'  {printx("statement -> member_access\n");} 
+        | eval_expression ';' {printx("statement -> eval_expression\n");} 
         ;
-        
-//declarations: declaration {printx("decls -> decl\n"); $$=$1;
-//        | declarations declaration {printx("decls -> decls decl\n"); $$ = new generalNode($1->content + " " + $2->content); delete $1; delete $2;}
- 
+
+// need to refactor code
+const_type: ISCONST TYPE {$$ = $2; $$->is_const = 1;}
+        | TYPE 
+init: '=' expr ';'  {$$ = $2;}
+        | ';' {$$ = nullptr;}
 
 declaration:
-          ISCONST TYPE ID '=' expr  { printx("\ndecl->const type id init;\n");
-                                            currentSymbolTable->defineSymbol(1,$2->type,$3->content,$5);  $$ = new generalNode($1->content + " " + $2->content+ " " + $3->content+ " " + $5->content); delete $1; delete $2;delete $3; delete $5;}
-        | ISCONST TYPE ID  { printx("\ndecl->const type id;\n");
-                                            currentSymbolTable->defineSymbol(1,$2->type,$3->content,nullptr);  $$ = new generalNode("const " + $1->content + " " + $2->content); delete $1; delete $2;delete $3;}
-        | TYPE ID '=' expr  { printx("\ndecl->type id init;\n");
-                                            currentSymbolTable->defineSymbol(0,$1->type,$2->content,$4);  $$ = new generalNode($1->content + " " + $2->content+ " = " + $4->content); delete $1; delete $2; delete $4;}
-        | TYPE ID  { printx("\ndecl->type id;\n");
-                                        currentSymbolTable->defineSymbol(0,$1->type,$2->content,nullptr);  $$ = new generalNode($1->content + " " + $2->content); delete $1; delete $2;}        
-        | ARRAY  { printx("\ndecl -> array\n");printf("array name : %s\n",$1->content.c_str());ArrayType * at = new ArrayType("",0);currentSymbolTable->define_array_symbol($1->content,at); $$ = $1;}
-        | class_declaration {printx("\n declaration -> class_declaration \n");}
+           const_type ID init   { printx("\ndecl->const type id init;\n");
+                                            currentSymbolTable->define_symbol($1,$2->content,$3);  $$ = new generalNode(""); delete $1; delete $2; delete $3;}                                            
+        | ARRAY  ';'  { printx("\ndecl -> array\n");printf("array name : %s\n",$1->content.c_str());ArrayType * at = new ArrayType("",0);currentSymbolTable->define_array_symbol($1->content,at); $$ = $1;}
+        | class_declaration ';' {printx("\n declaration -> class_declaration \n");}
         ;
 class_declaration: 
          ID ID  {printx("\n dclass_Declaration -> uninitialized \n");currentSymbolTable->define_user_symbol($1,$2);}
         
         | ID ID '(' field_val ')' {printx("\n dclass_Declaration -> initialized\n");currentSymbolTable->define_user_symbol($1,$2,$4);}
         
-field_val: ID ':' rval {printx("\nfield_Val -> ID : rval\n"); $$ = new myVectorClass(); $$->add_pointer($1);$$->add_pointer($3);}
-        | field_val ',' ID ':' rval {printx("\nfield_Val -> field_val , ID : rval\n"); $$ = $1; $$->add_pointer($3);$$->add_pointer($5);}
+field_val: ID ':' expr {printx("\nfield_Val -> ID : expr\n"); $$ = new myVectorClass(); $$->add_pointer($1);$$->add_pointer($3);}
+        | field_val ',' ID ':' expr {printx("\nfield_Val -> field_val , ID : expr\n"); $$ = $1; $$->add_pointer($3);$$->add_pointer($5);}
 
 
 
-
-ARRAY: TYPE ID '[' NR ']' { printx("\narray -> type id [ nr ]\n"); $$ = $2; arrayType=$1->type; arrayStack.push_back(atoi($4->content.c_str()));}
-        | ARRAY '[' NR ']' { printx("\narray -> array [ nr ]\n"); $$ = $1;arrayStack.push_back(atoi($3->content.c_str()));}
+ARRAY: const_type ID '[' INT_NR ']' { printx("\narray -> type id [ INT_NR ]\n"); $$ = $2; /*arrayType=$1->type; arrayStack.push_back($4->value);*/}
+        | ARRAY '[' INT_NR ']' { printx("\narray -> array [ INT_NR ]\n"); $$ = $1;arrayStack.push_back($3->value);}
 
 array_indexing: ID '[' rval ']' {printx("array_indexing -> ID '[' rval ']'");$$  = new arrayIndexing($1); $$->addRvalue($3); }
-        | array_indexing '[' rval ']' {printx("array_indexing -> array_indexing '[' NR ']'"); $$ = $1; $$->addRvalue($3);}
+        | array_indexing '[' rval ']' {printx("array_indexing -> array_indexing '[' INT_NR ']'"); $$ = $1; $$->addRvalue($3);}
         ;
 
 function: function_s statements RETURN rval '}' { printx("\nfunction -> function_s statements return rval}\n"); 
@@ -126,17 +124,17 @@ function: function_s statements RETURN rval '}' { printx("\nfunction -> function
                                         $$ = $1; checkVoidReturn();}
         | function_s '}' { printx("\nfunction -> function_s }\n");  backtrackScope();
                                         $$ = $1; checkVoidReturn();}                                        
-        | FN ID '(' ')' RARROW TYPE  { printx("\nfunctions_s -> FN ID ( ) RARROW TYPE ;\n");$$ = new functionNode($2->content,$6->type,nullptr);}
-        | FN ID '(' parameter_List ')' RARROW TYPE 
-         { printx("\nfunctions_s -> FN ID ( list ) RARROW TYPE ;\n");$$ = new functionNode($2->content,$7->type,$4->parameters);}
+        | FN ID '(' ')' RARROW const_type  { printx("\nfunctions_s -> FN ID ( ) RARROW const_type ;\n");$$ = new functionNode($2->content,$6->type,nullptr);}
+        | FN ID '(' parameter_List ')' RARROW const_type 
+         { printx("\nfunctions_s -> FN ID ( list ) RARROW const_type ;\n");$$ = new functionNode($2->content,$7->type,$4->parameters);}
         ;
 
 function_s:
-          FN ID '(' ')' RARROW TYPE '{' { printx("\nfunctions_s -> fn id ( ) -> type {\n");$$ = new functionNode($2->content,$6->type,nullptr);
+          FN ID '(' ')' RARROW const_type '{' { printx("\nfunctions_s -> fn id ( ) -> type {\n");$$ = new functionNode($2->content,$6->type,nullptr);
                                         currentSymbolTable = currentSymbolTable->addFunction($$); returnType = $6->type;
                                          }
 
-        | FN ID '(' parameter_List ')' RARROW TYPE '{' { printx("\nfunctions_s -> fn id ( list ) -> type {\n");  $$ = new functionNode($2->content,$7->type,$4->parameters);
+        | FN ID '(' parameter_List ')' RARROW const_type '{' { printx("\nfunctions_s -> fn id ( list ) -> type {\n");  $$ = new functionNode($2->content,$7->type,$4->parameters);
                                         currentSymbolTable=  currentSymbolTable->addFunction($$);returnType = $7->type;
                                         }
         ;
@@ -157,13 +155,17 @@ parameter_List: parameter_List ','  parameter {printx("parameter list -> paramet
         | parameter {printx("parameter list -> parameter\n");$$ = new parameterList();$$->addParameter($1);}
         ;
 
-parameter: TYPE ID { printx("\nparamter -> type id"); $$ = new Symbol(0,$1->type,$2->content,nullptr);}
+parameter: const_type ID { printx("\nparamter -> type id"); $$ = new Symbol(0,$1->type,$2->content,nullptr);}
         ;
 
 expr:     expr '+' expr { printx("\nexpr -> expr + expr\n");$$ = new ExpressionNode(OperTypes::ADD,$1,$3, $1->content +"+" + $3->content);  } 
         | expr '-' expr { printx("\nexpr -> expr - expr\n");$$ = new ExpressionNode(OperTypes::SUB,$1,$3, $1->content +"-" + $3->content);  } 
-        | ID {printf("\nexpr -> ID\n");$$ = new ExpressionNode(nullptr, $1->content); delete $1;}; 
-        | NR {printf("\nexpr -> NR\n");$$ = new ExpressionNode(nullptr, $1->content); delete $1;};  
+        | expr '/' expr { printx("\nexpr -> expr / expr\n");$$ = new ExpressionNode(OperTypes::DIV,$1,$3, $1->content +"/" + $3->content);  } 
+        | expr '*' expr { printx("\nexpr -> expr * expr\n");$$ = new ExpressionNode(OperTypes::MUL,$1,$3, $1->content +"*" + $3->content);  } 
+        | ID {printf("\nexpr -> ID\n");$$ = new ExpressionNode($1->content); delete $1;}; 
+        | INT_NR {printf("\nexpr -> INT_NR\n");$$ = new ExpressionNode($1); };  
+        | member_access {printf("\nexpr -> member_access\n");$$ = new ExpressionNode($1); };  
+        
         ;
 
 assignment: lval '=' rval  { $$ = new generalNode($1->content +"=" + $3->content); delete $1; delete $3;}
@@ -193,16 +195,17 @@ IF_ELSE_B: IF_ELSE_S statements '}' { printx("\nIF_ELSE_B -> IF_ESLE_S statement
 class_s: CLASS ID '{' {printx("\nclassb_S-> class id { \n");$$ = currentSymbolTable = currentSymbolTable->newClass($2);}
         ;
 decls_funcs: function {printx("\ndecls_funcs -> funcs\n");}
-        | declaration ';' {printx("\ndecls_funcs -> decls\n"); }
+        | declaration  {printx("\ndecls_funcs -> decls\n"); }
         | decls_funcs declaration ';' {printx("\ndecls_funcs -> decls_funcs declaration\n");  }
         | decls_funcs function {printx("\ndecls_funcs -> decls_funcs function\n");  }
 
 class_b:  class_s decls_funcs '}' {printx("\nclassb -> class_S decls_funcs } \n"); backtrackScope();}
         | class_s '}' {printx("\nclassb -> class_S } \n");backtrackScope();}
         ;
-member_access: ID '.' ID {printx("\nmember_access -> ID . ID \n"); currentSymbolTable->check_member_access($1,$3); $$ = new generalNode("member accsss");}
 
+member_access: ID '.' ID {printx("\nmember_access -> ID . ID \n"); $$ = currentSymbolTable->check_member_access($1,$3);}
 
+eval_expression : EVAL '(' expr ')'  {printx("\nevalexpr -> eval ( expr ) \n"); $3->eval_wrapper(); }
 
 %%
  
@@ -212,11 +215,12 @@ void yyerror(const char * s){
  
 int main(int argc, char** argv){
  
-    col = row = 1; 
-    rootSymbolTable = new symbolTalbeNode("global");
-    currentSymbolTable = rootSymbolTable;
-    yyin = fopen(argv[1], "r");    
-    yyparse(); 
+        col = row = 1; 
+        rootSymbolTable = new symbolTalbeNode("global");
+        currentSymbolTable = rootSymbolTable;
+        yyin = fopen(argv[1], "r");    
+        yyparse(); 
 
-    rootSymbolTable->printTable(0);
+        rootSymbolTable->printTable(0);
 }
+

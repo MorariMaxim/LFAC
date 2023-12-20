@@ -1,8 +1,10 @@
 class test {
-    int a;    
+    int a;
 }
 
 test x( a : 10);
+
+eval ( 1 + 2 * 4 + x.a);
 
 #
 
@@ -52,4 +54,16 @@ else {
     int x;
 }
 a = a + b;
+
+class test {
+    int a;    
+}
+
+test x( a : 10);
+
+int a = 10;
+
+eval ( 1 + 2 * 4 + a);
+
+
 #

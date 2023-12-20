@@ -1,4 +1,17 @@
 #include "generalNode.h"
+
+static int count  = 0;
+
+void print_count(string s) {
+
+    printf("[%d] %s\n",count++,s.c_str());
+}
+
+void symbol_not_declared(string s)
+{
+    printf("%s is not declared\n", s.c_str());
+}
+
 inline types str2Type(string str)
 {
 
@@ -26,7 +39,7 @@ inline types str2Type(string str)
 }
 
 static int debug = 0;
-TypeNode::TypeNode(string str) : generalNode(str)
+TypeNode::TypeNode(string str) : rvalueNode(str)
 {
     int debug = 0;
     this->type = str2Type(str);
@@ -41,8 +54,9 @@ TypeNode::~TypeNode()
     string s = "1";
 }
 
-generalNode::generalNode(string str) : content(str)
+generalNode::generalNode(string str)
 {
+    content = str;
     if (debug)
         printf("constructing generalNode (%s) at (%d,%d)\n", content.c_str(), row, col);
 }
@@ -81,21 +95,25 @@ void printx(string str)
         this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
-bool compare_types(TypeNode *t1, TypeNode *t2)
-{
-
+bool ExpressionNode::compare_types(TypeNode *t1, TypeNode *t2)
+{ 
+    if(!t1 || !t2) {
+        printf("one is null\n");
+        return false; }
     if (t1->type != t2->type)
-        return false;
-
+        {
+            printf("not equal types\n");
+            return false; }
     if (t1->type == types::USER_TYPE)
     {
 
-        auto clas = dynamic_cast<ClassType *>(t1);
+       auto clas = dynamic_cast<ClassType *>(t1);
 
         if (!clas)
         {
             printf("error at dynamic cast \n");
             return false;
+            
         }
         string name1 = clas->clas->name;
         clas = dynamic_cast<ClassType *>(t1);
@@ -107,9 +125,10 @@ bool compare_types(TypeNode *t1, TypeNode *t2)
         }
         string name2 = clas->clas->name;
 
+        printf("here 1");fflush(stdout);
         if (name1 != name2)
             return false;
-    }
+    } 
     return true;
 }
 
@@ -147,10 +166,14 @@ TypeNode *ExpressionNode::type_of()
     }
 
 TypeNode *ExpressionNode::eval_binary_operator()
-{
-
+{ 
     auto t1 = left->eval();
     auto t2 = right->eval();
+
+    print_count("eval binary \n");
+    if(!t1 || !t2) {
+        print_count("one is null\n");
+        return nullptr;}
 
     if (!compare_types(t1, t2))
         return nullptr;
@@ -185,9 +208,21 @@ TypeNode *ExpressionNode::eval_binary_operator()
 
     return t1;
 }
-TypeNode *ExpressionNode::eval_unary_operator()
+TypeNode *ExpressionNode::eval_wrapper()
 {
-    auto t1 = left->eval();  
+    print_count("goint to eval expression\n");
+
+    auto t = eval();
+    print_count("out\n"); fflush(stdout);
+
+    if (t)
+        t->print();
+    return t;
+}
+TypeNode *ExpressionNode::eval_unary_operator()
+{ 
+    auto t1 = left->eval();
+    if(!t1) return nullptr;
     switch (oper)
     {
     case OperTypes::NEG:
@@ -199,7 +234,7 @@ TypeNode *ExpressionNode::eval_unary_operator()
     {
         t1->uminus();
         break;
-    } 
+    }
     default:
         return nullptr;
     }
@@ -208,19 +243,26 @@ TypeNode *ExpressionNode::eval_unary_operator()
 }
 TypeNode *ExpressionNode::eval()
 {
+    print_count("eval call\n");
+    if (!type_node && !left && !right)
+        return nullptr;
+
+    print_count("a member is not null\n");
     if (type_node)
     {
-        auto t = new TypeNode();
-        *t = *type_node;
+        TypeNode *t;
+        type_node->copy_to(t);
+        print_count("return typenode\n");
         return t;
     }
-
+    print_count("not type node");
     if (oper == OperTypes::SUB || oper == OperTypes::ADD || oper == OperTypes::MUL || oper == OperTypes::DIV)
         return eval_binary_operator();
 
+    print_count("eval unary");
     if (oper == OperTypes::NEG || oper == OperTypes::UMINUS)
         return eval_unary_operator();
-        
+
     return nullptr;
 }
 
@@ -230,12 +272,26 @@ ExpressionNode::ExpressionNode(OperTypes op, ExpressionNode *left, ExpressionNod
     this->left = left;
     this->right = right;
     vector<int> v;
-    string s = "213";
 }
 
-ExpressionNode::ExpressionNode(TypeNode *type_node, string cont) : generalNode(cont)
+ExpressionNode::ExpressionNode(string cont) : generalNode(cont)
 {
-    this->type_node = type_node;
+    auto sym = currentSymbolTable->is_symbol_defined_in_path(cont);
+
+    if (!sym)
+    {
+        symbol_not_declared(cont);
+        type_node = nullptr;
+        return;
+    }
+    if(sym->typen) {
+        sym->typen->copy_to(type_node);
+    } 
+}
+
+ExpressionNode::ExpressionNode(TypeNode *tp) : generalNode("")
+{
+    this->type_node = tp;
 }
 
 ExpressionNode::~ExpressionNode()
@@ -426,10 +482,10 @@ void rValueNodes::addRvalue(rvalueNode *rval)
 
 #define checkSymbol(x)                                                                        \
     {                                                                                         \
-        if (currentSymbolTable->isSymbolDefinedInPath(x->content) == nullptr)                 \
+        if (currentSymbolTable->is_symbol_defined_in_path(x->content) == nullptr)             \
             printf("\nsymbol not defined %s at %d:%d\n", x->content.c_str(), x->row, x->col); \
     }
-#define getSymbol(x) currentSymbolTable->isSymbolDefinedInPath(x->content)
+#define getSymbol(x) currentSymbolTable->is_symbol_defined_in_path(x->content)
 
 arrayIndexing::arrayIndexing(generalNode *arr)
 {
@@ -612,16 +668,62 @@ void ArrayType::buildFromStack(int it)
     }
 }
 
-IntType::IntType(string s)
+IntType::IntType(string s) : TypeNode(s)
 {
+    type = INT;
     value = atoi(s.c_str());
 }
 
 bool IntType::add(TypeNode *other)
 {
-
     auto t2 = dynamic_cast<IntType *>(other);
-
     this->value += t2->value;
     return true;
+}
+
+bool IntType::mul(TypeNode *other)
+{
+    auto t2 = dynamic_cast<IntType *>(other);
+    this->value *= t2->value;
+    return true;
+}
+
+bool IntType::div(TypeNode *other)
+{
+    auto t2 = dynamic_cast<IntType *>(other);
+    if (t2->value != 0)
+    {
+        this->value /= t2->value;
+    }
+
+    return true;
+}
+bool IntType::sub(TypeNode *other)
+{
+    auto t2 = dynamic_cast<IntType *>(other);
+    this->value -= t2->value;
+    return true;
+}
+void IntType::copy_to(TypeNode *&other)
+{
+    auto o = (IntType *)(other);
+    o = new IntType(this->content);
+    o->value = this->value;
+    other = o;
+}
+void IntType::print()
+{
+
+    printf("IntType, value = %d\n", value);
+}
+
+ClassType::ClassType(symbolTalbeNode * ct) : TypeNode(types::USER_TYPE)
+{
+    clas = ct;
+    for( auto& field : clas->symbols) {
+        bool is_const = field.second->isConst;
+
+
+        fields[field.first] = TypeNodeIsConst {nullptr, is_const};
+    }
 }

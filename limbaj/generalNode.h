@@ -18,7 +18,7 @@ public:
     virtual ~generalNode();
 };
 
-class rvalueNode : virtual public generalNode
+class rvalueNode : public generalNode
 {
 public:
     rvalueNode(string cont);
@@ -52,18 +52,28 @@ public:
 class TypeNode : public rvalueNode
 {
 public:
+    int is_const = 0;
     types type;
     TypeNode(string str);
-    TypeNode(){};
+    TypeNode(types t){type = t;};
     virtual ~TypeNode();
 
-    virtual bool add(TypeNode *other){return false;};
-    virtual bool sub(TypeNode *other){return false;};
-    virtual bool mul(TypeNode *other){return false;};
-    virtual bool div(TypeNode *other){return false;};
+    virtual bool add(TypeNode *other) { return false; };
+    virtual bool sub(TypeNode *other) { return false; };
+    virtual bool mul(TypeNode *other) { return false; };
+    virtual bool div(TypeNode *other) { return false; };
 
-    virtual bool uminus(){return false;};
-    virtual bool neg(){return false;};
+    virtual bool uminus() { return false; };
+    virtual bool neg() { return false; };
+
+    virtual void print() { printf("unimplemented\n"); };
+    virtual void copy_to(TypeNode *&other) { 
+    {
+        auto o = (TypeNode *)(other);
+        o = new TypeNode(this->content);
+        o->type = this->type;
+        other = o;
+    };};
 };
 
 class UserDefinedType : TypeNode
@@ -75,6 +85,8 @@ class FloatType : public TypeNode
 {
 public:
     float val;
+
+    FloatType() : TypeNode(FLOAT){};
 };
 class IntType : public TypeNode
 {
@@ -82,7 +94,12 @@ public:
     int value;
     IntType(string s);
 
-    bool add(TypeNode* other) override;
+    bool add(TypeNode *other) override;
+    bool mul(TypeNode *other) override;
+    bool div(TypeNode *other) override;
+    bool sub(TypeNode *other) override;
+    virtual void print() override;
+    virtual void copy_to(TypeNode *&other);
 };
 class StringType : public TypeNode
 {
@@ -95,6 +112,8 @@ public:
 class CharType : public TypeNode
 {
 public:
+
+    CharType() : TypeNode(FLOAT){};
 };
 class ArrayType : public TypeNode
 {
@@ -111,10 +130,19 @@ public:
     void buildFromStack(int it);
     static ArrayType *arrayBuiltFromStack;
 };
+
+struct TypeNodeIsConst
+{
+    TypeNode *tn;
+    bool is_const;
+};
 class ClassType : public TypeNode
 {
 public:
     symbolTalbeNode *clas;
+    unordered_map<string, TypeNodeIsConst> fields;
+
+    ClassType(symbolTalbeNode *ct);
 };
 
 class functionNode : public generalNode
@@ -163,12 +191,15 @@ enum OperTypes
 class ExpressionNode : public generalNode
 {
 public:
-    ExpressionNode *left, *right;
+    ExpressionNode *left = nullptr, *right = nullptr;
     OperTypes oper;
     TypeNode *type_node = nullptr;
 
     ExpressionNode(OperTypes op, ExpressionNode *left, ExpressionNode *right, string cont);
-    ExpressionNode(TypeNode *type_node, string cont);
+    ExpressionNode(TypeNode *type_node);
+    ExpressionNode(string cont);
+
+    static bool compare_types(TypeNode *t1, TypeNode *t2);
 
     virtual ~ExpressionNode();
 
@@ -176,8 +207,10 @@ public:
 
     TypeNode *eval();
 
-    TypeNode* eval_binary_operator();
-    TypeNode* eval_unary_operator();
+    TypeNode *eval_wrapper();
+
+    TypeNode *eval_binary_operator();
+    TypeNode *eval_unary_operator();
 };
 
 class myVectorClass

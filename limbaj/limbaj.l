@@ -18,14 +18,14 @@ visibilityType currentVisibility = PUBLIC;
 "for" {yylval.node = new generalNode(yytext);col+=yyleng; return FOR;}
 "else" {yylval.node = new generalNode(yytext);col+=yyleng; return ELSE;}
 "const" {yylval.node = new generalNode(yytext);col+=yyleng; return CONST;}
-
+"eval"  {printx("EVAL");yylval.node = new generalNode(yytext);col+=yyleng; return EVAL;}
 
 "int"|"float"|"char"|"string"|"void" {printx("type"); yylval.TypeNode = new TypeNode(yytext); col+=yyleng; return TYPE; } 
 "begin_progr" {printx("a1\n");yylval.node = new generalNode(yytext);col+=yyleng; return BGIN;}
 "end_progr" {printx("a2\n");yylval.node = new generalNode(yytext);col+=yyleng; return END;}
 [a-zA-Z][a-zA-Z0-9]* {printx("ID");yylval.node = new generalNode(yytext,row,col); col+=yyleng; return ID;}
 ":=" {printx("a4\n");yylval.node = new generalNode(yytext);col+=yyleng; return ASSIGN;}
-[0-9]+ {printx("NR");yylval.node = new generalNode(yytext);col+=yyleng; return NR;}
+[-+]{0,1}[0-9]+ {printx("INT_NR");yylval.node = new IntType(yytext);col+=yyleng; return INT_NR;}
 "#"[^#]*"#" {}
 [ \t] {printx("_");col+=yyleng;};
 \n {printx("NL\n");row++;col=1;}

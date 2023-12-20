@@ -57,18 +57,19 @@ extern int yydebug;
     BGIN = 258,                    /* BGIN  */
     END = 259,                     /* END  */
     ASSIGN = 260,                  /* ASSIGN  */
-    NR = 261,                      /* NR  */
-    ID = 262,                      /* ID  */
-    IF = 263,                      /* IF  */
-    ELSE = 264,                    /* ELSE  */
-    WHILE = 265,                   /* WHILE  */
-    FOR = 266,                     /* FOR  */
-    CONST = 267,                   /* CONST  */
-    RARROW = 268,                  /* RARROW  */
-    FN = 269,                      /* FN  */
-    RETURN = 270,                  /* RETURN  */
-    CLASS = 271,                   /* CLASS  */
-    TYPE = 272                     /* TYPE  */
+    ID = 261,                      /* ID  */
+    IF = 262,                      /* IF  */
+    ELSE = 263,                    /* ELSE  */
+    WHILE = 264,                   /* WHILE  */
+    FOR = 265,                     /* FOR  */
+    CONST = 266,                   /* CONST  */
+    RARROW = 267,                  /* RARROW  */
+    FN = 268,                      /* FN  */
+    RETURN = 269,                  /* RETURN  */
+    CLASS = 270,                   /* CLASS  */
+    EVAL = 271,                    /* EVAL  */
+    INT_NR = 272,                  /* INT_NR  */
+    TYPE = 273                     /* TYPE  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -91,8 +92,9 @@ union YYSTYPE
     class arrayIndexing * arrayIndexingNode;
     class symbolTalbeNode* classNode; 
     class myVectorClass* container;
+    class IntType * int_type_node;
 
-#line 96 "limbaj.tab.h"
+#line 98 "limbaj.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

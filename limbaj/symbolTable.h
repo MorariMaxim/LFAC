@@ -47,17 +47,17 @@ public:
     symbolTalbeNode *getParent();
     string getFullPath();
     void   printTable(int depth);
-    Symbol* isSymbolDefinedInPath(string name);
+    Symbol* is_symbol_defined_in_path(string name);
     Symbol* isLocallyDefined(string name);
     functionNode* isFuncDefined(string name);
     symbolTalbeNode * isClassDefined(string name);
 
     Symbol* is_user_symbol_defined(generalNode * id );
-    int check_member_access( generalNode * id, generalNode * member_id );
+    TypeNode * check_member_access( generalNode * id, generalNode * member_id );
 
-    int defineSymbol(bool isConst_, types type_, string name_, ExpressionNode *value_);
-    int defineSymbol(string name, Symbol* symbol);
-    int defineSymbol(Symbol* symbol);
+    int define_symbol(TypeNode* tn, string name, ExpressionNode *value);
+    int define_symbol(string name, Symbol* symbol);
+    int define_symbol(Symbol* symbol);
     int define_array_symbol(string name,ArrayType* at);
     Symbol* create_temp_symbol(ExpressionNode *value_);
     Symbol* define_user_symbol(generalNode * classId, generalNode * symbolName);

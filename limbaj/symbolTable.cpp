@@ -1,6 +1,11 @@
 #include "symbolTable.h"
 #include "generalNode.h"
 
+void nullptr_error(string s)
+{
+    printf("a pointer was null when unexpected; %s\n", s.c_str());
+}
+
 #define indent(x)                   \
     {                               \
         for (int i = 0; i < x; i++) \
@@ -88,7 +93,7 @@ void Symbol::printSymbol()
     {
         if (classType)
         {
-            printf("%s %s", classType->name.c_str(),name.c_str());
+            printf("%s %s", classType->name.c_str(), name.c_str());
         }
     }
     else if (type == types::ARRAY)
@@ -117,8 +122,7 @@ void Symbol::printSymbol()
     }
     else
     {
-        printf("%s %s\n",getTypeAsStr(type).c_str(),name.c_str());
-        
+        printf("%s %s\n", getTypeAsStr(type).c_str(), name.c_str());
     }
 }
 
@@ -174,7 +178,7 @@ void symbolTalbeNode::printTable(int depth)
     }
 }
 
-Symbol *symbolTalbeNode::isSymbolDefinedInPath(string name)
+Symbol *symbolTalbeNode::is_symbol_defined_in_path(string name)
 {
     auto it = symbols.find(name);
     if (it != symbols.end())
@@ -190,21 +194,49 @@ Symbol *symbolTalbeNode::isSymbolDefinedInPath(string name)
     if (parent != nullptr)
     {
 
-        auto res = parent->isSymbolDefinedInPath(name);
+        auto res = parent->is_symbol_defined_in_path(name);
         return res;
     }
+
     return nullptr;
 }
-
-int symbolTalbeNode::defineSymbol(bool isConst_, types type_, string name_, ExpressionNode *value_)
+int symbolTalbeNode::define_symbol(TypeNode *tn, string name, ExpressionNode *value)
 {
-    auto it = symbols.find(name_);
+    if (!tn)
+    {
+        nullptr_error(" type node was nullptr");
+        return 0;
+    }
+    auto it = symbols.find(name);
 
     if (it != symbols.end())
         return false;
 
-    Symbol *symbol = new Symbol(isConst_, type_, name_, value_);
+    Symbol *symbol = new Symbol(tn->is_const, tn->type, name, value);
+
+    TypeNode *typen;
+
+    if (value)
+    {
+        typen = value->eval();
+    }
+    else
+    {
+        tn->copy_to(typen);
+    }
+
+    if (!typen)
+    {
+        printf("symbol %s, type is null\n", name.c_str());
+    }
+    else
+    {
+        printf("symbol %s, type is not null\n", name.c_str());
+    }
+    symbol->typen = typen;
+
     checkInsertion(symbols.emplace(symbol->name, symbol));
+
     return true;
 }
 
@@ -253,7 +285,6 @@ symbolTalbeNode *symbolTalbeNode::addScope(string name)
 Symbol *symbolTalbeNode::define_user_symbol(generalNode *classId, generalNode *symbolName)
 {
     Symbol *sym = new Symbol();
-
     auto cl = isClassDefined(classId->content);
     if (!cl)
     {
@@ -263,6 +294,7 @@ Symbol *symbolTalbeNode::define_user_symbol(generalNode *classId, generalNode *s
     sym->type = USER_TYPE;
     sym->classType = cl;
     sym->name = symbolName->content;
+    sym->typen = new ClassType(cl);
 
     if (isLocallyDefined(sym->name))
     {
@@ -286,29 +318,58 @@ Symbol *symbolTalbeNode::define_user_symbol(generalNode *classId, generalNode *s
         return nullptr;
     }
 
+    auto object = dynamic_cast<ClassType *>(sym->typen);
+
+    auto fields = &object->fields;
+
+    auto class_fields = object->clas->symbols;
+
     for (int i = 0; i < size / 2; i++)
     {
         auto id = (generalNode *)(init->pointers[i]);
-        auto val = (TypeNode *)(init->pointers[i + 1]);
+        auto expr = (ExpressionNode *)(init->pointers[i + 1]);
 
-        auto field =  sym->classType->isLocallyDefined(id->content);
+        auto field = fields->find(id->content);
 
-        if(!field) {
-            printf("no %s field\n",id->content.c_str());
+        if (field == fields->end())
+        {
+            printf("no %s field\n", id->content.c_str());
             return nullptr;
         }
 
-        //to do: check the types
+        // to do
 
-        field->typen = val;
+        auto val = expr->eval();
+        if (!val)
+        {
+            printf("val is null\n");
+        }
+        if (!class_fields[id->content]->typen)
+        {
+            printf("typen is null\n");
+        }
+
+        if (!ExpressionNode::compare_types(val, class_fields[id->content]->typen))
+        {
+
+            printf("uneuqal types\n");
+            return nullptr;
+        }
+
+        auto f = &(*fields).at(id->content);
+
+        if (f->tn)
+            delete f->tn;
+
+        f->tn = val;
     }
-
+    
     return sym;
 }
 
 Symbol *symbolTalbeNode::is_user_symbol_defined(generalNode *id)
 {
-    auto sym = isSymbolDefinedInPath(id->content);
+    auto sym = is_symbol_defined_in_path(id->content);
 
     if (!sym)
     {
@@ -384,7 +445,7 @@ symbolTalbeNode *symbolTalbeNode::addFunction(string name)
     return nullptr;
 }
 
-int symbolTalbeNode::defineSymbol(Symbol *symbol)
+int symbolTalbeNode::define_symbol(Symbol *symbol)
 {
     auto it = symbols.find(symbol->name);
 
@@ -409,7 +470,7 @@ int symbolTalbeNode::define_array_symbol(string name, ArrayType *at)
     return true;
 }
 
-int symbolTalbeNode::defineSymbol(string name_, Symbol *symbol)
+int symbolTalbeNode::define_symbol(string name_, Symbol *symbol)
 {
     auto it = symbols.find(name_);
 
@@ -432,26 +493,34 @@ Symbol *symbolTalbeNode::isLocallyDefined(string name)
     return nullptr;
 }
 
-int symbolTalbeNode::check_member_access(generalNode *id, generalNode *member_id)
+TypeNode *symbolTalbeNode::check_member_access(generalNode *id, generalNode *member_id)
 {
     Symbol *sym = is_user_symbol_defined(id);
 
     if (!sym)
-        return -1;
+        return nullptr;
 
-    auto clas = sym->classType;
-    /*
-    if (clas == nullptr)
+    auto obj = dynamic_cast<ClassType *>(sym->typen);
+
+    if (!obj)
     {
-        printf("%s class is not defined \n", sym->classType->name.c_str());
-        return -1;
-    }*/
+        printf("error at dynamic cast\n");
+        return nullptr;
+    }
 
-    if (!clas->isLocallyDefined(member_id->content))
+    auto field = obj->fields.find(member_id->content);
+
+    if (field == obj->fields.end())
     {
         printf("no %s member\n", member_id->content.c_str());
-        return -1;
+        return nullptr;
     }
+
     printf("correct member access\n");
-    return 1;
+
+    if(!field->second.tn) {
+        printf("the field.tn is null\n");
+    }
+
+    return field->second.tn;
 }
