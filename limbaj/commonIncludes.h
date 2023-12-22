@@ -5,11 +5,12 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-class symbolTalbeNode;
-class ExpressionNode;
-class functionNode;
-class myVectorClass;
-class TypeNode;
+#include <string.h>
+class SymbolTable;
+class Expression;
+class FunctionDetails;
+class Vector;
+class TypeAndValue;
 class ArrayType;
 using namespace std;
 
@@ -57,14 +58,26 @@ string getTypeAsStr(types type);
 
 extern int row;
 extern int col;
-extern symbolTalbeNode *rootSymbolTable;
-extern symbolTalbeNode *currentSymbolTable;
+extern SymbolTable *rootSymbolTable;
+extern SymbolTable *currentSymbolTable;
 extern vector<int> arrayStack;
-extern types arrayType;
-extern types returnType;
+extern TypeAndValue* arrayType;
+extern TypeAndValue*  gReturnType;
+extern Expression* return_expression;
 extern visibilityType currentVisibility;
+extern bool ignore_after_return_statement;
 
-class generalNode;
+class GeneralInfo;
 
-
+#define notify(message, ...)                                                                                \
+    do                                                                                                      \
+    {                                                                                                       \
+        int debug_option = 1;                                                                               \
+        if (!debug_option)                                                                                  \
+            continue;                                                                                       \
+        char buffer_x[300];                                                                                 \
+        snprintf(buffer_x, sizeof(buffer_x), "NOTIFY : ");                                                  \
+        snprintf(buffer_x + strlen(buffer_x), sizeof(buffer_x) - strlen(buffer_x), message, ##__VA_ARGS__); \
+        printf("%s", buffer_x);                                                                             \
+    } while (0)
 #endif

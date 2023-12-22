@@ -68,8 +68,10 @@ extern int yydebug;
     RETURN = 269,                  /* RETURN  */
     CLASS = 270,                   /* CLASS  */
     EVAL = 271,                    /* EVAL  */
-    INT_NR = 272,                  /* INT_NR  */
-    TYPE = 273                     /* TYPE  */
+    INT_TYPE = 272,                /* INT_TYPE  */
+    INT_NR = 273,                  /* INT_NR  */
+    TYPE = 274,                    /* TYPE  */
+    UMINUS = 275                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -78,20 +80,18 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 29 "limbaj.y"
+#line 57 "limbaj.y"
 
-    class generalNode* node; 
-    class TypeNode* TypeNode;
-    class ExpressionNode* exprnode;
+    class GeneralInfo* node; 
+    class TypeAndValue* TypeAndValue;
+    class Expression* exprnode;
     class Symbol * parameterNode;
-    class functionNode* funcNode;
+    class FunctionDetails* funcNode;
     class parameterList* parListNode;
-    class functionCall* funcCall;
-    class rvalueNode * rvalNode;
-    class rValueNodes * rvaluesNode;
-    class arrayIndexing * arrayIndexingNode;
-    class symbolTalbeNode* classNode; 
-    class myVectorClass* container;
+    class FunctionCall* funcCall; 
+    class ArrayIndexing * arrayIndexingNode;
+    class SymbolTable* classNode; 
+    class Vector* container;
     class IntType * int_type_node;
 
 #line 98 "limbaj.tab.h"

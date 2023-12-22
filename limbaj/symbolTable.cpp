@@ -1,5 +1,12 @@
 #include "symbolTable.h"
-#include "generalNode.h"
+#include "GeneralInfo.h"
+
+static int count = 0; 
+void print_count2(string s)
+{
+
+    printf("[%d] %s\n", count++, s.c_str());fflush(stdout);
+}
 
 void nullptr_error(string s)
 {
@@ -58,47 +65,41 @@ string getTypeAsStr(types type)
     }
 }
 
-Symbol::Symbol(bool isConst_, types type_, string name_, ExpressionNode *value_)
+Symbol::Symbol(string name, TypeAndValue *tv, Expression *init)
 {
-    isConst = isConst_;
-    type = type_;
-    name = name_;
-    value = value_;
-}
-
-void Symbol::setTo(bool isConst_, types type_, string name_, ExpressionNode *value_)
-{
-    isConst = isConst_;
-    type = type_;
-    name = name_;
-    value = value_;
+    this->name = name;
+    type = tv;
 }
 
 Symbol::Symbol()
 {
-    isConst = 0;
-    type = FLOAT;
-    name = "";
-    value = nullptr;
+
 }
 
 Symbol::~Symbol()
 {
-    delete value;
+    delete type;
 }
 
 void Symbol::printSymbol()
 {
-    if (this->type == USER_TYPE)
+    if (!type)
     {
-        if (classType)
+        notify("typenode is nullptr");
+        return;
+    }
+
+    if (this->type->type == USER_TYPE)
+    {
+        auto clas = dynamic_cast<ClassType *>(this->type);
+        if (clas)
         {
-            printf("%s %s", classType->name.c_str(), name.c_str());
+            printf("%s %s", clas->clas->name.c_str(), name.c_str());
         }
     }
-    else if (type == types::ARRAY)
+    else if (type->type == types::ARRAY)
     {
-        ArrayType *temp = dynamic_cast<ArrayType *>(typen);
+        ArrayType *temp = dynamic_cast<ArrayType *>(type);
         if (!temp)
         {
             printf("dynamic cast failed\n");
@@ -122,27 +123,27 @@ void Symbol::printSymbol()
     }
     else
     {
-        printf("%s %s\n", getTypeAsStr(type).c_str(), name.c_str());
+        printf("%s %s\n", getTypeAsStr(type->type).c_str(), name.c_str());
     }
 }
 
 string Symbol::getSymbolAsString()
 {
     char buffer[200] = "";
-    snprintf(buffer, 100, "%s %s", getTypeAsStr(this->type).c_str(), this->name.c_str());
+    snprintf(buffer, 100, "%s %s", getTypeAsStr(this->type->type).c_str(), this->name.c_str());
     return buffer;
 }
 
-symbolTalbeNode::symbolTalbeNode(string name) : name(name)
+SymbolTable::SymbolTable(string name) : name(name)
 {
     visibility = currentVisibility;
 }
 
-string symbolTalbeNode::getFullPath()
+string SymbolTable::getFullPath()
 {
     string fullPath = this->name;
 
-    symbolTalbeNode *temp = parent;
+    SymbolTable *temp = parent;
     while (temp != nullptr)
     {
         fullPath += temp->name;
@@ -151,11 +152,11 @@ string symbolTalbeNode::getFullPath()
     return fullPath;
 }
 
-void symbolTalbeNode::printTable(int depth)
+void SymbolTable::printTable(int depth)
 {
     indent(depth);
-    if (funcNode)
-        printf("%s\n", funcNode->signature.c_str());
+    if (func_details)
+        printf("%s\n", func_details->signature.c_str());
     else
         printf("%s\n", this->name.c_str());
     for (auto &child : classes)
@@ -178,15 +179,15 @@ void symbolTalbeNode::printTable(int depth)
     }
 }
 
-Symbol *symbolTalbeNode::is_symbol_defined_in_path(string name)
+Symbol *SymbolTable::is_symbol_defined_in_path(string name)
 {
     auto it = symbols.find(name);
     if (it != symbols.end())
         return it->second;
-    if (funcNode)
+    if (func_details)
     {
 
-        auto res = funcNode->hasParemeter(name);
+        auto res = func_details->hasParemeter(name);
         if (res)
             return res;
     }
@@ -200,7 +201,7 @@ Symbol *symbolTalbeNode::is_symbol_defined_in_path(string name)
 
     return nullptr;
 }
-int symbolTalbeNode::define_symbol(TypeNode *tn, string name, ExpressionNode *value)
+int SymbolTable::define_symbol(TypeAndValue *tn, string name, Expression *value)
 {
     if (!tn)
     {
@@ -212,35 +213,34 @@ int symbolTalbeNode::define_symbol(TypeNode *tn, string name, ExpressionNode *va
     if (it != symbols.end())
         return false;
 
-    Symbol *symbol = new Symbol(tn->is_const, tn->type, name, value);
-
-    TypeNode *typen;
+    Symbol *symbol = new Symbol();
 
     if (value)
     {
-        typen = value->eval();
+
+        auto res = value->eval();
+        if (!res || !Expression::are_types_equal(tn, res))
+            {notify("disonance between type value and initialization value\n");
+            return false;}
+
+        symbol->type = res;
+        symbol->is_init = true;
     }
     else
     {
-        tn->copy_to(typen);
+        symbol->type = tn;
+        symbol->is_init = false;
     }
 
-    if (!typen)
-    {
-        printf("symbol %s, type is null\n", name.c_str());
-    }
-    else
-    {
-        printf("symbol %s, type is not null\n", name.c_str());
-    }
-    symbol->typen = typen;
+    symbol->is_const = tn->is_const;
+    symbol->name = name;
 
     checkInsertion(symbols.emplace(symbol->name, symbol));
 
     return true;
 }
 
-symbolTalbeNode *symbolTalbeNode::isClassDefined(string name)
+SymbolTable *SymbolTable::isClassDefined(string name)
 {
     if (type == CLASS_SCOPE && this->name == name)
         return this;
@@ -259,54 +259,58 @@ symbolTalbeNode *symbolTalbeNode::isClassDefined(string name)
     return nullptr;
 }
 
-symbolTalbeNode *symbolTalbeNode::getParent()
+SymbolTable *SymbolTable::getParent()
 {
     return parent;
 }
 
-symbolTalbeNode *symbolTalbeNode::newClass(generalNode *gn)
+SymbolTable *SymbolTable::newClass(GeneralInfo *gn)
 {
-    symbolTalbeNode *newClassSope = new symbolTalbeNode(gn->content);
+    SymbolTable *newClassSope = new SymbolTable(gn->content);
     newClassSope->type = CLASS_SCOPE;
     newClassSope->parent = this;
     checkInsertion(classes.emplace(newClassSope->name, newClassSope));
     return newClassSope;
 }
 
-symbolTalbeNode *symbolTalbeNode::addScope(string name)
+SymbolTable *SymbolTable::addScope(string name)
 {
-    symbolTalbeNode *newScope = new symbolTalbeNode(name);
+    SymbolTable *newScope = new SymbolTable(name);
     newScope->parent = this;
     checkInsertion(other.emplace(newScope->name, newScope));
 
     return newScope;
 }
 
-Symbol *symbolTalbeNode::define_user_symbol(generalNode *classId, generalNode *symbolName)
-{
-    Symbol *sym = new Symbol();
+Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbolName)
+{    
     auto cl = isClassDefined(classId->content);
     if (!cl)
     {
         printf("%s isn't a user defined type\n", classId->content.c_str());
         return nullptr;
-    }
-    sym->type = USER_TYPE;
-    sym->classType = cl;
-    sym->name = symbolName->content;
-    sym->typen = new ClassType(cl);
+    }    
 
-    if (isLocallyDefined(sym->name))
+    if (isLocallyDefined(symbolName->content))
     {
-        printf(" symbol (%s) is already defined\n", sym->name.c_str());
+        printf(" symbol (%s) is already defined\n", symbolName->content.c_str());
     }
+
+    Symbol *sym = new Symbol();
+    sym->type = new ClassType(cl);
+    sym->name = symbolName->content; // to do, is_const;
+    sym->is_init = false;
+
     symbols.emplace(sym->name, sym);
     return sym;
 }
 
-Symbol *symbolTalbeNode::define_user_symbol(generalNode *classId, generalNode *symbolName, myVectorClass *init)
+Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbolName, Vector *init)
 {
     Symbol *sym = define_user_symbol(classId, symbolName);
+
+    if(!init) return sym;
+
     if (!sym)
         return nullptr;
 
@@ -318,7 +322,7 @@ Symbol *symbolTalbeNode::define_user_symbol(generalNode *classId, generalNode *s
         return nullptr;
     }
 
-    auto object = dynamic_cast<ClassType *>(sym->typen);
+    auto object = dynamic_cast<ClassType *>(sym->type);
 
     auto fields = &object->fields;
 
@@ -326,8 +330,8 @@ Symbol *symbolTalbeNode::define_user_symbol(generalNode *classId, generalNode *s
 
     for (int i = 0; i < size / 2; i++)
     {
-        auto id = (generalNode *)(init->pointers[i]);
-        auto expr = (ExpressionNode *)(init->pointers[i + 1]);
+        auto id = (GeneralInfo *)(init->pointers[i * 2]);
+        auto expr = (Expression *)(init->pointers[i * 2 + 1]);
 
         auto field = fields->find(id->content);
 
@@ -344,12 +348,12 @@ Symbol *symbolTalbeNode::define_user_symbol(generalNode *classId, generalNode *s
         {
             printf("val is null\n");
         }
-        if (!class_fields[id->content]->typen)
+        if (!class_fields[id->content]->type)
         {
             printf("typen is null\n");
         }
 
-        if (!ExpressionNode::compare_types(val, class_fields[id->content]->typen))
+        if (!Expression::are_types_equal(val, class_fields[id->content]->type))
         {
 
             printf("uneuqal types\n");
@@ -367,7 +371,7 @@ Symbol *symbolTalbeNode::define_user_symbol(generalNode *classId, generalNode *s
     return sym;
 }
 
-Symbol *symbolTalbeNode::is_user_symbol_defined(generalNode *id)
+Symbol *SymbolTable::is_user_symbol_defined(GeneralInfo *id)
 {
     auto sym = is_symbol_defined_in_path(id->content);
 
@@ -377,7 +381,7 @@ Symbol *symbolTalbeNode::is_user_symbol_defined(generalNode *id)
         return nullptr;
     }
 
-    if (sym->type != USER_TYPE || sym->classType == nullptr)
+    if (sym->type == nullptr || sym->type->type != USER_TYPE )
     {
         printf("%s's type is not a class \n", id->content.c_str());
         return nullptr;
@@ -385,14 +389,14 @@ Symbol *symbolTalbeNode::is_user_symbol_defined(generalNode *id)
     return sym;
 }
 
-void symbolTalbeNode::setAsFunction(functionNode *funcNode)
+void SymbolTable::setAsFunction(FunctionDetails *funcNode)
 {
     name = funcNode->name;
-    this->funcNode = funcNode;
+    this->func_details = funcNode;
     type = FUNC_SCOPE;
 }
 
-Symbol *symbolTalbeNode::create_temp_symbol(ExpressionNode *value)
+/*Symbol *SymbolTable::create_temp_symbol(Expression *value)
 {
     Symbol *temp_symbol = new Symbol(0, types::OTHER, "", value);
 
@@ -400,21 +404,21 @@ Symbol *symbolTalbeNode::create_temp_symbol(ExpressionNode *value)
 
     return temp_symbol;
 }
+*/
 
-functionNode *symbolTalbeNode::isFuncDefined(string name)
-{
-    // printf("in %s scope, looking for %s\n",this->name.c_str(),name.c_str());
-    if (funcNode)
-    {
-        if (funcNode->name == name)
-            return funcNode;
-    }
+
+FunctionDetails *SymbolTable::isFuncDefined(string name)
+{ 
+    if (func_details)
+    { 
+        if (func_details->name == name)
+            return func_details;
+    }    
     for (auto &scope : functions)
-    {
-        // printf("scope child %s scope\n",scope->name.c_str());
-        if (scope.second->funcNode != nullptr && scope.second->funcNode->name == name)
+    {  
+        if (scope.second->func_details != nullptr && scope.second->func_details->name == name)
         {
-            return scope.second->funcNode;
+            return scope.second->func_details;
         }
     }
     if (parent != nullptr)
@@ -425,9 +429,9 @@ functionNode *symbolTalbeNode::isFuncDefined(string name)
     return nullptr;
 }
 
-symbolTalbeNode *symbolTalbeNode::addFunction(functionNode *newFunc)
+SymbolTable *SymbolTable::addFunction(FunctionDetails *newFunc)
 {
-    symbolTalbeNode *newScope = new symbolTalbeNode(newFunc->name);
+    SymbolTable *newScope = new SymbolTable(newFunc->name);
     newScope->parent = this;
     int debug = 0;
     if (debug)
@@ -440,12 +444,12 @@ symbolTalbeNode *symbolTalbeNode::addFunction(functionNode *newFunc)
     return newScope;
 }
 
-symbolTalbeNode *symbolTalbeNode::addFunction(string name)
+SymbolTable *SymbolTable::addFunction(string name)
 {
     return nullptr;
 }
 
-int symbolTalbeNode::define_symbol(Symbol *symbol)
+int SymbolTable::define_symbol(Symbol *symbol)
 {
     auto it = symbols.find(symbol->name);
 
@@ -457,20 +461,19 @@ int symbolTalbeNode::define_symbol(Symbol *symbol)
     return true;
 }
 
-int symbolTalbeNode::define_array_symbol(string name, ArrayType *at)
+int SymbolTable::define_array_symbol(string name, ArrayType *at)
 {
     if (isLocallyDefined(name))
         return false;
 
-    Symbol *as = new Symbol(0, types::ARRAY, name, nullptr);
-    as->typen = at;
+    Symbol *as = new Symbol(name,at,nullptr);
 
     printf("Trying to insert %s\n", name.c_str());
     checkInsertion(symbols.emplace(name, as));
     return true;
 }
 
-int symbolTalbeNode::define_symbol(string name_, Symbol *symbol)
+int SymbolTable::define_symbol(string name_, Symbol *symbol)
 {
     auto it = symbols.find(name_);
 
@@ -483,7 +486,7 @@ int symbolTalbeNode::define_symbol(string name_, Symbol *symbol)
     return true;
 }
 
-Symbol *symbolTalbeNode::isLocallyDefined(string name)
+Symbol *SymbolTable::isLocallyDefined(string name)
 {
     auto it = symbols.find(name);
 
@@ -493,14 +496,14 @@ Symbol *symbolTalbeNode::isLocallyDefined(string name)
     return nullptr;
 }
 
-TypeNode *symbolTalbeNode::check_member_access(generalNode *id, generalNode *member_id)
+TypeAndValue *SymbolTable::check_member_access(GeneralInfo *id, GeneralInfo *member_id)
 {
     Symbol *sym = is_user_symbol_defined(id);
 
     if (!sym)
         return nullptr;
 
-    auto obj = dynamic_cast<ClassType *>(sym->typen);
+    auto obj = dynamic_cast<ClassType *>(sym->type);
 
     if (!obj)
     {
@@ -518,7 +521,8 @@ TypeNode *symbolTalbeNode::check_member_access(generalNode *id, generalNode *mem
 
     printf("correct member access\n");
 
-    if(!field->second.tn) {
+    if (!field->second.tn)
+    {
         printf("the field.tn is null\n");
     }
 
