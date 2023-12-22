@@ -39,10 +39,10 @@ int treat_helper(int type) {
             printx("EVAK");col+=yyleng; return EVAL;
             break;
             case TYPE:
-            printx("type"); yylval.TypeAndValue = new TypeAndValue(yytext); col+=yyleng; return TYPE; 
+            printx("type"); yylval.TypeNode = new TypeNode(yytext); col+=yyleng; return TYPE; 
             break;
             case INT_TYPE:
-            printx("INT_TYPE"); yylval.TypeAndValue = new IntType(yytext); col+=yyleng; return TYPE; 
+            printx("INT_TYPE"); yylval.TypeNode = new IntType(yytext); col+=yyleng; return TYPE; 
             break;
             case BGIN:
             col+=yyleng; return BGIN;

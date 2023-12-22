@@ -83,7 +83,7 @@ union YYSTYPE
 #line 57 "limbaj.y"
 
     class GeneralInfo* node; 
-    class TypeAndValue* TypeAndValue;
+    class TypeNode* TypeNode;
     class Expression* exprnode;
     class Symbol * parameterNode;
     class FunctionDetails* funcNode;

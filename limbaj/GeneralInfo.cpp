@@ -1,5 +1,6 @@
 #include "GeneralInfo.h"
 #include <stdio.h>
+#include <format>
 using namespace std;
 
 static int count = 0;
@@ -45,18 +46,18 @@ inline types str_2_type(string str)
 }
 
 static int debug = 0;
-TypeAndValue::TypeAndValue(string str)
+TypeNode::TypeNode(string str)
 {
     int debug = 0;
     this->type = str_2_type(str);
     if (debug)
-        printf("\nconstructing TypeAndValue (%s)\n", str.c_str());
+        printf("\nconstructing TypeNode (%s)\n", str.c_str());
 }
 
-TypeAndValue::~TypeAndValue()
+TypeNode::~TypeNode()
 {
     if (debug)
-        printf("destructing  TypeAndValue (%s) \n", content.c_str());
+        printf("destructing  TypeNode (%s) \n", content.c_str());
     string s = "1";
 }
 
@@ -103,7 +104,7 @@ void printx(string str)
         this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
-bool Expression::are_types_equal(TypeAndValue *t1, TypeAndValue *t2)
+bool Expression::are_types_equal(TypeNode *t1, TypeNode *t2)
 {
     if (!t1 || !t2)
     {
@@ -146,25 +147,6 @@ bool Expression::are_types_equal(TypeAndValue *t1, TypeAndValue *t2)
     return true;
 }
 
-TypeAndValue *Expression::type_of()
-{
-    if (type_node)
-        return type_node;
-
-    if (oper == OperTypes::NEG || oper == OperTypes::UMINUSOPER)
-    {
-        return left->type_of();
-    }
-    auto t1 = left->type_of();
-
-    auto t2 = right->type_of();
-
-    if (!are_types_equal(t1, t2))
-        return nullptr;
-
-    return t1;
-}
-
 #define check_children_for_nullptr()     \
     {                                    \
         if (!left)                       \
@@ -179,22 +161,18 @@ TypeAndValue *Expression::type_of()
         }                                \
     }
 
-TypeAndValue *Expression::eval_binary_operator()
+ValueNode *Expression::eval_binary_operator()
 {
+    print_count("eval binary \n");
     auto t1 = left->eval();
     auto t2 = right->eval();
 
-    print_count("eval binary \n");
     if (!t1 || !t2)
     {
         print_count("one is null\n");
         return nullptr;
     }
 
-    if (!are_types_equal(t1, t2))
-        return nullptr;
-
-    print_count("here ");
     switch (oper)
     {
     case OperTypes::SUB:
@@ -205,10 +183,6 @@ TypeAndValue *Expression::eval_binary_operator()
     }
     case OperTypes::ADD:
     {
-        t1->print();
-        fflush(stdout);
-        t2->print();
-        fflush(stdout);
         print_count("add ");
         t1->add(t2);
         break;
@@ -225,21 +199,31 @@ TypeAndValue *Expression::eval_binary_operator()
         t1->div(t2);
         break;
     }
+    case OperTypes::NEG:
+    {
+        print_count("neg");
+        t1->neg();
+        break;
+    }
+    case OperTypes::LNOT:
+    {
+        print_count("!");
+        t1->lnot();
+        break;
+    }
     default:
         return nullptr;
     }
-    print_count("before delete ");
-    delete t2;
+
     print_count("return ");
     return t1;
 }
-TypeAndValue *Expression::eval_wrapper()
+ValueNode *Expression::eval_wrapper()
 {
-    print_count("goint to eval expression\n");
+    print_count("going to eval expression\n");
 
     auto t = eval();
     print_count("out\n");
-    fflush(stdout);
 
     if (t)
         t->print();
@@ -249,21 +233,22 @@ TypeAndValue *Expression::eval_wrapper()
     }
     return t;
 }
-TypeAndValue *Expression::eval_unary_operator()
+ValueNode *Expression::eval_unary_operator()
 {
+    print_count("eval unary");
     auto t1 = left->eval();
     if (!t1)
         return nullptr;
     switch (oper)
     {
+    case OperTypes::LNOT:
+    {
+        t1->lnot();
+        break;
+    }
     case OperTypes::NEG:
     {
         t1->neg();
-        break;
-    }
-    case OperTypes::UMINUSOPER:
-    {
-        t1->UMINUSOPER();
         break;
     }
     default:
@@ -272,32 +257,29 @@ TypeAndValue *Expression::eval_unary_operator()
 
     return t1;
 }
-TypeAndValue *Expression::eval()
+ValueNode *Expression::eval()
 {
     print_count("eval call\n");
-    if (!type_node && !left && !right)
-        return nullptr;
 
-    print_count("a member is not null\n");
-    if (type_node)
+    if (oper == NONOPERATOR)
     {
-        TypeAndValue *t;
-        type_node->copy_to(t);
-        print_count("return TypeAndValue\n");
-        return t;
+        ValueNode *temp1;
+        auto temp2 = get_leaf_value();
+        temp2->copy_to(temp1);
+        print_count("leaf node\n");
+        return temp1;
     }
-    print_count("not type node");
+
     if (oper == OperTypes::SUB || oper == OperTypes::ADD || oper == OperTypes::MUL || oper == OperTypes::DIV)
         return eval_binary_operator();
 
-    print_count("eval unary");
-    if (oper == OperTypes::NEG || oper == OperTypes::UMINUSOPER)
+    if (oper == OperTypes::LNOT || oper == OperTypes::NEG)
         return eval_unary_operator();
 
     return nullptr;
 }
 
-Expression::Expression(OperTypes op, Expression *left, Expression *right, string cont) : GeneralInfo(cont, -1, -1)
+Expression::Expression(OperTypes op, Expression *left, Expression *right) : GeneralInfo("", -1, -1)
 {
     this->oper = op;
     this->left = left;
@@ -307,33 +289,75 @@ Expression::Expression(OperTypes op, Expression *left, Expression *right, string
 
 Expression::Expression(string cont) : GeneralInfo(cont, -1, -1)
 {
-    auto sym = currentSymbolTable->is_symbol_defined_in_path(cont);
+    sym = currentSymbolTable->is_symbol_defined_in_path(cont);
 
     if (!sym)
     {
-        symbol_not_declared(cont);
-        type_node = nullptr;
-        return;
+        notify("%s not declared\n", cont.c_str());
     }
-    if (sym->type)
-    {
-        sym->type->copy_to(type_node);
-    }
-}
-
-Expression::Expression(TypeAndValue *tp) : GeneralInfo("", -1, -1)
-{
-    this->type_node = tp;
 }
 
 Expression::~Expression()
 {
     delete right;
     delete left;
-    delete this->type_node;
+
+    if (!symbol_type && oper == OperTypes::NONOPERATOR)
+    {
+        if (temp)
+        {
+            delete temp->type;
+            delete temp->value;
+        }
+    }
 }
 
-FunctionDetails::FunctionDetails(string name, TypeAndValue *ret_type, Vector *pars) : GeneralInfo("", -1, -1)
+TypeNode *Expression::get_leaf_type()
+{
+    if (oper == OperTypes::NONOPERATOR)
+    {
+        if (symbol_type)
+            return sym->type;
+        else
+            return temp->type;
+    }
+    return nullptr;
+}
+TypeNode *Expression::type()
+{
+    auto type = get_leaf_type();
+    if (type)
+        return type;
+    else
+    {
+        if (oper == OperTypes::LNOT || oper == OperTypes::NEG)
+        {
+            return left->type();
+        }
+        auto t1 = left->type();
+
+        auto t2 = right->type();
+
+        if (!are_types_equal(t1, t2))
+            return nullptr;
+
+        return t1;
+    }
+}
+ValueNode *Expression::get_leaf_value()
+{
+    if (oper == OperTypes::NONOPERATOR)
+    {
+        if (symbol_type)
+            return sym->value;
+        else if (temp)
+            return temp->value;
+        return nullptr;
+    }
+
+    return nullptr;
+}
+FunctionDetails::FunctionDetails(string name, TypeNode *ret_type, Vector *pars) : GeneralInfo("", -1, -1)
 {
     printf("func name = %s\n", name.c_str());
     parameters = new vector<Symbol *>();
@@ -353,7 +377,7 @@ FunctionDetails::FunctionDetails(string name, TypeAndValue *ret_type, Vector *pa
 
     if (!ret_type)
     {
-        return_type = new TypeAndValue(types::VOID);
+        return_type = new TypeNode(types::VOID);
     }
 
     this->name = name;
@@ -448,16 +472,16 @@ bool FunctionCall::checkCall()
             printf("%dth. arg is nullptr\n", i + 1);
             return false;
         }
-        if (!Expression::are_types_equal((*args)[i], (*parameters)[i]->type))
+        if (!Expression::are_types_equal((*args)[i]->type, (*parameters)[i]->type))
         {
-            printf("args[%d].type (%s) != pars[%d].type (%s)\n", i, getTypeAsStr((*args)[i]->type).c_str(), i, getTypeAsStr((*parameters)[i]->type->type).c_str());
+            printf("args[%d].type (%s) != pars[%d].type (%s)\n", i, getTypeAsStr((*args)[i]->type->type).c_str(), i, getTypeAsStr((*parameters)[i]->type->type).c_str());
             return false;
         }
     }
     return true;
 }
 
-FunctionCall::FunctionCall(GeneralInfo *scope_id, Vector *fnname_parameters) : TypeAndValue("") // to do , to return
+FunctionCall::FunctionCall(GeneralInfo *scope_id, Vector *fnname_parameters) : ValueNode()
 {
     SymbolTable *scope = currentSymbolTable;
 
@@ -505,12 +529,12 @@ FunctionCall::FunctionCall(GeneralInfo *scope_id, Vector *fnname_parameters) : T
 
     if (funcnode->return_type)
     {
-        this->type = funcnode->return_type->type;
+        this->type = funcnode->return_type;
     }
 
     function_name = funcnode;
 
-    args = new vector<TypeAndValue *>();
+    args = new vector<ValueNode *>();
 
     if (fnname_parameters->pointers.size() > 1)
     {
@@ -526,10 +550,6 @@ FunctionCall::FunctionCall(GeneralInfo *scope_id, Vector *fnname_parameters) : T
         }
     }
 
-    if (function_name->return_type)
-    {
-        function_name->return_type->copy_to(value);
-    }
     print();
 }
 void ArrayIndexing::add_index(Expression *rval)
@@ -552,7 +572,7 @@ void ArrayIndexing::add_index(Expression *rval)
     }
 #define getSymbol(x) currentSymbolTable->is_symbol_defined_in_path(x->content)
 
-ArrayIndexing::ArrayIndexing(GeneralInfo *arr) : TypeAndValue("") // to do  to set the type
+ArrayIndexing::ArrayIndexing(GeneralInfo *arr)
 {
     checkSymbol(arr);
     auto sym = getSymbol(arr);
@@ -567,89 +587,56 @@ ArrayIndexing::ArrayIndexing(GeneralInfo *arr) : TypeAndValue("") // to do  to s
     if (!convert)
     {
         printf("%s is not an ArrayType\n", arr->content.c_str());
+        array = nullptr;
     }
     else
-        array = convert;
+        array = sym;
 
-    indexes = new vector<TypeAndValue *>();
+    indexes = new vector<ValueNode *>();
 }
 bool ArrayIndexing::check_indexes()
 {
+    if (!indexes || !array)
+    {
+        notify("no indexes or no array\n");
+        return true;
+    }
+
     printf("indexes : ");
     for (auto v : *indexes)
     {
-        printf("%d ", (dynamic_cast<IntType *>(v))->value);
+        v->print();
     }
     printf("\n");
 
-    if (!indexes)
-    {
-        printf("rindexes of array_indexing is null");
-        return false;
-    }
-    int dim = array->dimension;
-    int n = indexes->size();
-    int size;
-    auto temp = array;
-    if (dim < n)
-    {
-        printf("too many indexations\n");
-    }
-    int min = n - 1;
+    ArrayType *current_dimension = dynamic_cast<ArrayType *>(array->type);
 
+    int index_size = indexes->size();
     int it = 0;
-    int val;
-    string indexing = "";
-    TypeAndValue *tv;
-    while (it != min)
-    {
-        size = temp->size;
-        // printf("size = %d\n",size);
-        tv = (*indexes)[it];
-        auto convert = dynamic_cast<IntType *>(tv); // to do rest of the cases
-        if (!convert)
-        {
-            printf("%dth indexing is not a integer value\n", it + 1);
-            return false;
-        }
-        val = convert->value;
-        indexing += "[" + to_string(val) + "]";
 
-        if (val < 0 || val >= size)
+    for (auto &val : *indexes)
+    {
+        if (!current_dimension)
         {
-            printf("%dth indexing [%d] is out of range[%d]\n", it + 1, val, size);
+            notify("error converting to arraytype, probably more indexations than array dimensions");
             return false;
         }
-        if (!temp->elements)
-        {
-            printf("temp->array_elements is null");
-            return false;
-        }
-        temp = dynamic_cast<ArrayType *>((*temp->elements)[val]);
-        if (!temp)
-        {
-            printf("error during dynamic_cast !\n");
-            return false;
-        }
-        it++;
-    }
 
-    size = temp->size;
-    tv = (*indexes)[it];
-    auto convert = dynamic_cast<IntType *>(tv);
-    if (!convert)
-    {
-        printf("%dth indexing is not a integer value\n", it + 1);
-        return false;
+        auto index = dynamic_cast<IntValue *>(val);
+        if (!index || index->value < 0)
+        {
+            notify("index is not usize");
+            return false;
+        }
+
+        if (current_dimension->size <= index->value)
+        {
+            notify("index exceeds size of array");
+            return false;
+        }
+
+        current_dimension = dynamic_cast<ArrayType *>(current_dimension->element_type);
     }
-    val = convert->value;
-    indexing += "[" + to_string(val) + "]";
-    if (val < 0 || val >= size)
-    {
-        printf("%dth indexing [%d] is out of range[%d]\n", it + 1, val, size);
-        return false;
-    }
-    printf("%s corect indexing of a\n", indexing.c_str());
     return true;
 }
 
@@ -658,23 +645,18 @@ void Vector::add_pointer(void *ptr)
     pointers.push_back(ptr);
 }
 
-ArrayType::ArrayType(string str, int iteration) : TypeAndValue(str)
+ArrayType::ArrayType(TypeNode *et) : TypeNode(types::ARRAY)
 {
-    elements = nullptr;
-    buildFromStack(iteration);
+    element_type = et;
 }
 
 ArrayType::~ArrayType()
 {
-    for (auto el : *elements)
-    {
-        delete el;
-    }
-    delete elements;
+    delete element_type;
 }
 
+/*
 ArrayType *ArrayType::arrayBuiltFromStack = nullptr;
-
 void ArrayType::buildFromStack(int it)
 {
     if (it == 0)
@@ -698,28 +680,28 @@ void ArrayType::buildFromStack(int it)
     if (n == (it + 1))
     {
         types base_type;
-        vector<TypeAndValue *> *bottom_elements;
+        vector<TypeNode *> *bottom_elements;
         switch (arrayType->type) // to do
         {
         case FLOAT:
             // printf("float\n");
             base_type = types::FLOAT;
-            bottom_elements = new vector<TypeAndValue *>(this->size, new FloatType());
+            bottom_elements = new vector<TypeNode *>(this->size, new FloatType());
             break;
         case INT:
             base_type = types::INT;
             // printf("int\n");
-            bottom_elements = new vector<TypeAndValue *>(this->size, new IntType("0"));
+            bottom_elements = new vector<TypeNode *>(this->size, new IntType("0"));
             break;
         case CHAR:
             base_type = types::CHAR;
             // printf("char\n");
-            bottom_elements = new vector<TypeAndValue *>(this->size, new CharType());
+            bottom_elements = new vector<TypeNode *>(this->size, new CharType());
             break;
         case STRING:
             break;
         default:
-            bottom_elements = new vector<TypeAndValue *>(this->size, new TypeAndValue(types::OTHER));
+            bottom_elements = new vector<TypeNode *>(this->size, new TypeNode(types::OTHER));
             break;
         }
         elements = bottom_elements;
@@ -727,37 +709,36 @@ void ArrayType::buildFromStack(int it)
     }
     else
     {
-        elements = new vector<TypeAndValue *>(this->size, new ArrayType("", it + 1));
+        elements = new vector<TypeNode *>(this->size, new ArrayType("", it + 1));
     }
     if (it == 0)
     {
         arrayStack.clear();
     }
-}
+}*/
 
-IntType::IntType(string s) : TypeAndValue(s)
+IntType::IntType(string s) : TypeNode(INT)
 {
     type = INT;
-    value = atoi(s.c_str());
 }
 
-bool IntType::add(TypeAndValue *other)
+bool IntValue::add(ValueNode *other)
 {
-    auto t2 = dynamic_cast<IntType *>(other);
+    auto t2 = dynamic_cast<IntValue *>(other);
     this->value += t2->value;
     return true;
 }
 
-bool IntType::mul(TypeAndValue *other)
+bool IntValue::mul(ValueNode *other)
 {
-    auto t2 = dynamic_cast<IntType *>(other);
+    auto t2 = dynamic_cast<IntValue *>(other);
     this->value *= t2->value;
     return true;
 }
 
-bool IntType::div(TypeAndValue *other)
+bool IntValue::div(ValueNode *other)
 {
-    auto t2 = dynamic_cast<IntType *>(other);
+    auto t2 = dynamic_cast<IntValue *>(other);
     if (t2->value != 0)
     {
         this->value /= t2->value;
@@ -765,42 +746,45 @@ bool IntType::div(TypeAndValue *other)
 
     return true;
 }
-bool IntType::sub(TypeAndValue *other)
+bool IntValue::sub(ValueNode *other)
 {
-    auto t2 = dynamic_cast<IntType *>(other);
+    auto t2 = dynamic_cast<IntValue *>(other);
     this->value -= t2->value;
     return true;
 }
-bool IntType::neg()
-{
-
-    return false;
-}
-bool IntType::UMINUSOPER()
+bool IntValue::neg()
 {
     value *= -1;
     return false;
 }
-void IntType::copy_to(TypeAndValue *&other)
+bool IntValue::lnot()
 {
-    auto o = (IntType *)(other);
-    o = new IntType(this->content);
+    value *= -1;
+    return false;
+}
+void IntValue::copy_to(ValueNode *&other)
+{
+    auto o = (IntValue *)(other);
+    o = new IntValue();
     o->value = this->value;
     other = o;
 }
-void IntType::print()
+void IntValue::print()
 {
-
-    printf("IntType, value = %d\n", value);
+    printf("Integer with value = %d\n", value);
 }
 
-ClassType::ClassType(SymbolTable *ct) : TypeAndValue(types::USER_TYPE)
+ClassObject::ClassObject(ClassType *ct)
 {
-    clas = ct;
-    for (auto &field : clas->symbols)
+    type = ct;
+    for (auto &field : ct->clas->symbols)
     {
-        bool is_const = field.second->is_const;
-
-        fields[field.first] = TypeNodeIsConst{nullptr, is_const};
+        fields[field.first] = new Symbol(field.second);
     }
 }
+
+ClassType::ClassType(SymbolTable *ct) : TypeNode(types::USER_TYPE)
+{
+    clas = ct;
+}
+ 

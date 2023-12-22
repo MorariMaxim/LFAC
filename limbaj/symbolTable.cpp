@@ -1,11 +1,12 @@
 #include "symbolTable.h"
 #include "GeneralInfo.h"
 
-static int count = 0; 
+static int count = 0;
 void print_count2(string s)
 {
 
-    printf("[%d] %s\n", count++, s.c_str());fflush(stdout);
+    printf("[%d] %s\n", count++, s.c_str());
+    fflush(stdout);
 }
 
 void nullptr_error(string s)
@@ -65,15 +66,30 @@ string getTypeAsStr(types type)
     }
 }
 
-Symbol::Symbol(string name, TypeAndValue *tv, Expression *init)
+Symbol::Symbol(string name, TypeNode *tv, Expression *init)
 {
     this->name = name;
     type = tv;
 }
 
+Symbol::Symbol(string name, TypeNode *tv, bool is_const, bool is_init)
+{
+    this->name = name;
+    tv->copy_to(type);
+    this->is_const = is_const;
+    this->is_init = is_init;
+}
+
 Symbol::Symbol()
 {
+}
 
+Symbol::Symbol(Symbol *other)
+{
+    this->name = other->name;
+    other->type->copy_to(type);
+    this->is_const = other->is_const;
+    this->is_init = other->is_init;
 }
 
 Symbol::~Symbol()
@@ -83,55 +99,57 @@ Symbol::~Symbol()
 
 void Symbol::printSymbol()
 {
-    if (!type)
-    {
-        notify("typenode is nullptr");
-        return;
-    }
 
-    if (this->type->type == USER_TYPE)
-    {
-        auto clas = dynamic_cast<ClassType *>(this->type);
-        if (clas)
+    if (type)
+        cout << type->to_string();
+    // to do
+    /*    if (!type)
         {
-            printf("%s %s", clas->clas->name.c_str(), name.c_str());
-        }
-    }
-    else if (type->type == types::ARRAY)
-    {
-        ArrayType *temp = dynamic_cast<ArrayType *>(type);
-        if (!temp)
-        {
-            printf("dynamic cast failed\n");
+            notify("typenode is nullptr");
             return;
         }
 
-        printf(" %s[%d]", this->name.c_str(), temp->size);
-
-        while (temp->dimension != 1)
+        if (this->type->type == USER_TYPE)
         {
-            temp = dynamic_cast<ArrayType *>((*temp->elements)[0]);
+            auto clas = dynamic_cast<ClassType *>(this->type);
+            if (clas)
+            {
+                printf("%s %s", clas->clas->name.c_str(), name.c_str());
+            }
+        }
+        else if (type->type == types::ARRAY)
+        {
+            ArrayType *temp = dynamic_cast<ArrayType *>(type);
             if (!temp)
             {
                 printf("dynamic cast failed\n");
                 return;
             }
 
-            printf("[%d]", temp->size);
+            printf(" %s[%d]", this->name.c_str(), temp->size);
+
+            while (temp->dimension != 1)
+            {
+                temp = dynamic_cast<ArrayType *>((*temp->elements)[0]);
+                if (!temp)
+                {
+                    printf("dynamic cast failed\n");
+                    return;
+                }
+
+                printf("[%d]", temp->size);
+            }
+            printf("\n");
         }
-        printf("\n");
-    }
-    else
-    {
-        printf("%s %s\n", getTypeAsStr(type->type).c_str(), name.c_str());
-    }
+        else
+        {
+            printf("%s %s\n", getTypeAsStr(type->type).c_str(), name.c_str());
+        }*/
 }
 
 string Symbol::getSymbolAsString()
 {
-    char buffer[200] = "";
-    snprintf(buffer, 100, "%s %s", getTypeAsStr(this->type->type).c_str(), this->name.c_str());
-    return buffer;
+    return type->to_string() + name;
 }
 
 SymbolTable::SymbolTable(string name) : name(name)
@@ -159,6 +177,7 @@ void SymbolTable::printTable(int depth)
         printf("%s\n", func_details->signature.c_str());
     else
         printf("%s\n", this->name.c_str());
+
     for (auto &child : classes)
     {
         child.second->printTable(depth + 1);
@@ -201,7 +220,7 @@ Symbol *SymbolTable::is_symbol_defined_in_path(string name)
 
     return nullptr;
 }
-int SymbolTable::define_symbol(TypeAndValue *tn, string name, Expression *value)
+int SymbolTable::define_symbol(TypeNode *tn, string name, Expression *value)
 {
     if (!tn)
     {
@@ -210,20 +229,25 @@ int SymbolTable::define_symbol(TypeAndValue *tn, string name, Expression *value)
     }
     auto it = symbols.find(name);
 
-    if (it != symbols.end())
+    if (it != symbols.end()) {
+        notify("symbol %s already exists", name.c_str());
         return false;
+    }
+        
 
     Symbol *symbol = new Symbol();
 
     if (value)
     {
-
         auto res = value->eval();
-        if (!res || !Expression::are_types_equal(tn, res))
-            {notify("disonance between type value and initialization value\n");
-            return false;}
+        if (!res || !Expression::are_types_equal(tn, res->type))
+        {
+            notify("disonance between type value and initialization value\n");
+            return false;
+        }
 
-        symbol->type = res;
+        symbol->type = res->type;
+        symbol->value = res;
         symbol->is_init = true;
     }
     else
@@ -234,8 +258,8 @@ int SymbolTable::define_symbol(TypeAndValue *tn, string name, Expression *value)
 
     symbol->is_const = tn->is_const;
     symbol->name = name;
-
-    checkInsertion(symbols.emplace(symbol->name, symbol));
+    
+    symbols.emplace(symbol->name, symbol);
 
     return true;
 }
@@ -283,13 +307,13 @@ SymbolTable *SymbolTable::addScope(string name)
 }
 
 Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbolName)
-{    
+{
     auto cl = isClassDefined(classId->content);
     if (!cl)
     {
         printf("%s isn't a user defined type\n", classId->content.c_str());
         return nullptr;
-    }    
+    }
 
     if (isLocallyDefined(symbolName->content))
     {
@@ -301,6 +325,8 @@ Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbo
     sym->name = symbolName->content; // to do, is_const;
     sym->is_init = false;
 
+
+
     symbols.emplace(sym->name, sym);
     return sym;
 }
@@ -309,7 +335,8 @@ Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbo
 {
     Symbol *sym = define_user_symbol(classId, symbolName);
 
-    if(!init) return sym;
+    if (!init)
+        return sym;
 
     if (!sym)
         return nullptr;
@@ -322,11 +349,16 @@ Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbo
         return nullptr;
     }
 
-    auto object = dynamic_cast<ClassType *>(sym->type);
+    auto type = dynamic_cast<ClassType *>(sym->type);
 
+    if(sym->value) delete sym->value;
+
+    auto object = new ClassObject(type);
+    sym->value = object;
+    
     auto fields = &object->fields;
 
-    auto class_fields = object->clas->symbols;
+    auto class_fields = type->clas->symbols;
 
     for (int i = 0; i < size / 2; i++)
     {
@@ -353,21 +385,18 @@ Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbo
             printf("typen is null\n");
         }
 
-        if (!Expression::are_types_equal(val, class_fields[id->content]->type))
+        if (!Expression::are_types_equal(val->type, class_fields[id->content]->type))
         {
 
             printf("uneuqal types\n");
             return nullptr;
         }
 
-        auto f = &(*fields).at(id->content);
+        auto f = (*fields).at(id->content);
 
-        if (f->tn)
-            delete f->tn;
-
-        f->tn = val;
+        f->value = val;
     }
-    
+
     return sym;
 }
 
@@ -381,7 +410,7 @@ Symbol *SymbolTable::is_user_symbol_defined(GeneralInfo *id)
         return nullptr;
     }
 
-    if (sym->type == nullptr || sym->type->type != USER_TYPE )
+    if (sym->type == nullptr || sym->type->type != USER_TYPE)
     {
         printf("%s's type is not a class \n", id->content.c_str());
         return nullptr;
@@ -406,16 +435,15 @@ void SymbolTable::setAsFunction(FunctionDetails *funcNode)
 }
 */
 
-
 FunctionDetails *SymbolTable::isFuncDefined(string name)
-{ 
+{
     if (func_details)
-    { 
+    {
         if (func_details->name == name)
             return func_details;
-    }    
+    }
     for (auto &scope : functions)
-    {  
+    {
         if (scope.second->func_details != nullptr && scope.second->func_details->name == name)
         {
             return scope.second->func_details;
@@ -466,7 +494,7 @@ int SymbolTable::define_array_symbol(string name, ArrayType *at)
     if (isLocallyDefined(name))
         return false;
 
-    Symbol *as = new Symbol(name,at,nullptr);
+    Symbol *as = new Symbol(name, at, nullptr);
 
     printf("Trying to insert %s\n", name.c_str());
     checkInsertion(symbols.emplace(name, as));
@@ -496,35 +524,31 @@ Symbol *SymbolTable::isLocallyDefined(string name)
     return nullptr;
 }
 
-TypeAndValue *SymbolTable::check_member_access(GeneralInfo *id, GeneralInfo *member_id)
+Symbol *SymbolTable::check_member_access(GeneralInfo *id, GeneralInfo *member_id)
 {
     Symbol *sym = is_user_symbol_defined(id);
 
     if (!sym)
         return nullptr;
 
-    auto obj = dynamic_cast<ClassType *>(sym->type);
+    auto type = dynamic_cast<ClassType *>(sym->type);
 
-    if (!obj)
+    if (!type)
     {
         printf("error at dynamic cast\n");
         return nullptr;
     }
+    auto symbols = &type->clas->symbols;
+    auto field = symbols->find(member_id->content);
 
-    auto field = obj->fields.find(member_id->content);
-
-    if (field == obj->fields.end())
+    if (field == symbols->end())
     {
         printf("no %s member\n", member_id->content.c_str());
         return nullptr;
     }
 
     printf("correct member access\n");
+ 
 
-    if (!field->second.tn)
-    {
-        printf("the field.tn is null\n");
-    }
-
-    return field->second.tn;
+    return field->second;
 }

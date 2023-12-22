@@ -8,10 +8,13 @@ public:
     string name;
     bool is_const;
     bool is_init;
-    TypeAndValue *type = nullptr;
+    TypeNode *type = nullptr;
+    ValueNode* value = nullptr;
 
-    Symbol(string name, TypeAndValue *tv, Expression *init);
+    Symbol(string name, TypeNode *tv, Expression *init);
+    Symbol(string name, TypeNode *tv, bool is_const, bool is_init);
     Symbol();
+    Symbol(Symbol * other);
     void setTo(string name, bool is_const, Expression *init); 
     ~Symbol();
 
@@ -50,9 +53,9 @@ public:
     SymbolTable *isClassDefined(string name);
 
     Symbol *is_user_symbol_defined(GeneralInfo *id);
-    TypeAndValue *check_member_access(GeneralInfo *id, GeneralInfo *member_id);
+    Symbol *check_member_access(GeneralInfo *id, GeneralInfo *member_id);
 
-    int define_symbol(TypeAndValue *tn, string name, Expression *value);
+    int define_symbol(TypeNode *tn, string name, Expression *value);
     int define_symbol(string name, Symbol *symbol);
     int define_symbol(Symbol *symbol);
     int define_array_symbol(string name, ArrayType *at);
@@ -66,6 +69,9 @@ public:
     SymbolTable *addClass(string name);
 
     void setAsFunction(FunctionDetails *funcNode);
+
+    //to do 
+    // method to add string,symbol* to a map and checking if already exists
 };
 
 #endif

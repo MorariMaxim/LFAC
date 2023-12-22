@@ -18,100 +18,75 @@ public:
     virtual ~GeneralInfo();
 };
 
-class TypeAndValue : public GeneralInfo
+class TypeNode : public GeneralInfo
 {
 public:
-    int is_const = 0;
+    bool is_const = 0;
     types type;
-    TypeAndValue(types t) { type = t; };
-    TypeAndValue(string str);
-    virtual ~TypeAndValue();
+    TypeNode(types t) { type = t; };
+    TypeNode(string str);
 
-    virtual bool add(TypeAndValue *other) { return false; };
-    virtual bool sub(TypeAndValue *other) { return false; };
-    virtual bool mul(TypeAndValue *other) { return false; };
-    virtual bool div(TypeAndValue *other) { return false; };
-
-    virtual bool UMINUSOPER() { return false; };
-    virtual bool neg() { return false; };
-
-    virtual void print() { printf("unimplemented\n"); };
-
-    virtual void copy_to(TypeAndValue *&other)
+    virtual string  to_string(){ return "unspecialized type";};
+    virtual void copy_to(TypeNode *&other)
     {
         {
-            auto o = (TypeAndValue *)(other);
-            o = new TypeAndValue(this->type);
+            auto o = (TypeNode *)(other);
+            o = new TypeNode(types::OTHER);
             o->type = this->type;
             other = o;
         };
     };
+    virtual ~TypeNode();
 };
 
-class FloatType : public TypeAndValue
+class FloatType : public TypeNode
 {
 public:
-    float val;
-
-    FloatType() : TypeAndValue(FLOAT){};
+    FloatType() : TypeNode(FLOAT){};
 };
-class IntType : public TypeAndValue
+class IntType : public TypeNode
 {
 public:
-    int value;
     IntType(string s);
-
-    bool add(TypeAndValue *other) override;
-    bool mul(TypeAndValue *other) override;
-    bool div(TypeAndValue *other) override;
-    bool sub(TypeAndValue *other) override;
-    bool neg() override;
-    bool UMINUSOPER() override;
-    void print() override;
-    void copy_to(TypeAndValue *&other);
 };
-class StringType : public TypeAndValue
+class StringType : public TypeNode
 {
 public:
 };
-class BoolType : public TypeAndValue
+class BoolType : public TypeNode
 {
 public:
 };
-class CharType : public TypeAndValue
+class CharType : public TypeNode
 {
 public:
-    CharType() : TypeAndValue(FLOAT){};
+    CharType() : TypeNode(FLOAT){};
 };
-class ArrayType : public TypeAndValue
+class ArrayType : public TypeNode
 {
 public:
     int size;
-    int dimension;
-    types el_type;
+    TypeNode *element_type;
 
-    vector<TypeAndValue *> *elements;
 
-    ArrayType(string str, int iteration);
+    ArrayType(TypeNode * et);
     ~ArrayType();
 
-    void buildFromStack(int it);
-    static ArrayType *arrayBuiltFromStack;
+    /*void buildFromStack(int it);
+    static ArrayType *arrayBuiltFromStack;*/
 };
 
 struct TypeNodeIsConst
 {
-    TypeAndValue *tn;
+    TypeNode *tn;
     bool is_const;
 };
 
-class ClassType : public TypeAndValue
+class ClassType : public TypeNode
 {
 public:
     SymbolTable *clas;
-    unordered_map<string, TypeNodeIsConst> fields;
-
-    ClassType(SymbolTable *ct);
+    ClassType(SymbolTable *ct); 
 };
 
 class FunctionDetails : public GeneralInfo
@@ -120,8 +95,8 @@ public:
     string name;
     string signature;
     vector<Symbol *> *parameters;
-    TypeAndValue *return_type;
-    FunctionDetails(string name, TypeAndValue *ret_type, Vector *pars);
+    TypeNode *return_type;
+    FunctionDetails(string name, TypeNode *ret_type, Vector *pars);
     ~FunctionDetails();
     Symbol *hasParemeter(string name);
     void set_gReturnType();
@@ -129,57 +104,120 @@ public:
     void setSignature();
 };
 
-class FunctionCall : public TypeAndValue
-{
-public:
-    FunctionDetails *function_name;
-    vector<TypeAndValue *> *args;
-    TypeAndValue *value;
-    bool checkCall();
-    FunctionCall(GeneralInfo *scope, Vector *rest);
-
-    bool add(TypeAndValue *other) { return true; };
-    bool sub(TypeAndValue *other) { return true; };
-    bool mul(TypeAndValue *other) { return true; };
-    bool div(TypeAndValue *other) { return true; };
-
-    bool UMINUSOPER() { return true; };
-    bool neg() { return true; };
-
-    void print() { if(value) value->print(); else {printf("unimplemented in functioncall\n");} };
-
-    void copy_to(TypeAndValue *&other)
-    {   
-        if(value) {
-            value->copy_to(other);
-        }
-        else {
-            auto o = (TypeAndValue *)(other);
-            o = new TypeAndValue(this->type);
-            o->type = this->type;
-            other = o;
-        };
-    };
-};
-
-class ArrayIndexing : public TypeAndValue
-{
-public:
-    vector<TypeAndValue *> *indexes;
-    void add_index(Expression *val);
-    ArrayType *array;
-
-    bool check_indexes();
-    ArrayIndexing(GeneralInfo *ar);
-};
 enum OperTypes
 {
     SUB,
     ADD,
     MUL,
     DIV,
-    UMINUSOPER,
-    NEG
+    NEG,
+    LNOT,
+    NONOPERATOR
+};
+
+class ValueNode
+{
+public:
+    TypeNode *type;
+    ValueNode();
+    virtual ~ValueNode();
+
+    virtual bool add(ValueNode *other) { return false; };
+    virtual bool sub(ValueNode *other) { return false; };
+    virtual bool mul(ValueNode *other) { return false; };
+    virtual bool div(ValueNode *other) { return false; };
+
+    virtual bool neg() { return false; };
+    virtual bool lnot() { return false; };
+
+    virtual void print() { printf("unimplemented\n"); };
+
+    virtual void copy_to(ValueNode *&other)
+    {
+        {
+            auto o = (ValueNode *)(other);
+            o = new ValueNode();
+            o->type = this->type;
+            other = o;
+        };
+    };
+};
+
+class IntValue : public ValueNode
+{
+public:
+    int value;
+    IntValue();
+    virtual bool add(ValueNode *other) ;
+    virtual bool sub(ValueNode *other) ;
+    virtual bool mul(ValueNode *other) ;
+    virtual bool div(ValueNode *other) ;
+
+    virtual bool neg() ;
+    virtual bool lnot() ;
+
+    void print() override;
+
+    virtual void copy_to(ValueNode *&other);
+};
+ 
+class FunctionCall : public ValueNode
+{
+public:
+    FunctionDetails *function_name;
+    vector<ValueNode*> *args;
+    ValueNode *value;
+    bool checkCall();
+    FunctionCall(GeneralInfo *scope, Vector *rest);
+
+    bool add(ValueNode *other) { return true; };
+    bool sub(ValueNode *other) { return true; };
+    bool mul(ValueNode *other) { return true; };
+    bool div(ValueNode *other) { return true; };
+
+    bool NEG() { return true; };
+    bool neg() { return true; };
+
+    void print()
+    {
+        if (value)
+            value->print();
+        else
+        {
+            printf("unimplemented in functioncall\n");
+        }
+    };
+
+    void copy_to(ValueNode *&other)
+    {
+        if (value)
+        {
+            value->copy_to(other);
+        }
+        else
+        {
+            auto o = (ValueNode *)(other);
+            o = new ValueNode();
+            o->type = this->type;
+            other = o;
+        };
+    };
+};
+class ClassObject : public ValueNode {
+public:    
+    unordered_map<string, Symbol*> fields;
+    ClassObject(ClassType *ct);
+};
+
+
+class ArrayIndexing
+{
+public:
+    Symbol *array;
+    vector<ValueNode *> *indexes;
+    ArrayIndexing(GeneralInfo *ar);
+    void add_index(Expression *val);
+    bool check_indexes();
 };
 
 class Expression : public GeneralInfo
@@ -187,25 +225,35 @@ class Expression : public GeneralInfo
 public:
     Expression *left = nullptr, *right = nullptr;
     OperTypes oper;
-    TypeAndValue *type_node = nullptr;
+    bool symbol_type; // 1 for symbol; 0 for temp object
+    union
+    {
+        Symbol *sym;
+        struct
+        {
+            TypeNode *type;
+            ValueNode *value;
+        } *temp;
+    };
 
-    Expression(OperTypes op, Expression *left, Expression *right, string cont);
-    Expression(TypeAndValue *type_node);
-    Expression(string cont);
-
-    static bool are_types_equal(TypeAndValue *t1, TypeAndValue *t2);
-
+    Expression(OperTypes op, Expression *left, Expression *right);
+    Expression(TypeNode *tn, ValueNode *vn);
+    Expression(string identifier);
     virtual ~Expression();
 
-    TypeAndValue *type_of();
+    TypeNode *type();
+    ValueNode *get_leaf_value(); // only if leaf node
+    TypeNode *get_leaf_type();
+    static bool are_types_equal(TypeNode *t1, TypeNode *t2);
 
-    TypeAndValue *eval();
-
-    TypeAndValue *eval_wrapper();
-
-    TypeAndValue *eval_binary_operator();
-    TypeAndValue *eval_unary_operator();
+    ValueNode *eval_wrapper();
+    ValueNode *eval();
+    ValueNode *eval_binary_operator();
+    ValueNode *eval_unary_operator();
+ 
 };
+
+
 
 class Vector
 {

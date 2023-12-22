@@ -13,9 +13,9 @@ int row, col;
 
 void yyerror(const char * s);
 vector<int> arrayStack;
-TypeAndValue * arrayType;
+TypeNode * arrayType;
 class GeneralInfo;
-TypeAndValue * gReturnType;
+TypeNode * gReturnType;
 Expression* return_expression;
 
 #define checkSymbol(x) {if ( currentSymbolTable->is_symbol_defined_in_path(x->content)==nullptr) printf("\nsymbol not defined %s at %d:%d\n",x->content.c_str(),x->row,x->col); }
@@ -56,7 +56,7 @@ return_label:
 
 %union {
     class GeneralInfo* node; 
-    class TypeAndValue* TypeAndValue;
+    class TypeNode* TypeNode;
     class Expression* exprnode;
     class Symbol * parameterNode;
     class FunctionDetails* funcNode;
@@ -72,9 +72,9 @@ return_label:
 
 %token<node>  BGIN END ASSIGN ID IF ELSE WHILE FOR  CONST RARROW FN RETURN CLASS EVAL INT_TYPE
 %token<int_type_node> INT_NR
-%token<TypeAndValue> TYPE 
+%token<TypeNode> TYPE 
 
-%type<TypeAndValue> const_type member_access return_type
+%type<TypeNode> const_type member_access return_type
 %type<node>     class_declaration declaration IF_S IF_B statement statements IF_ELSE_S IF_ELSE_B assignment lval ISCONST ARRAY decls_funcs eval_expression function_body
 %type<exprnode> expr init return_value
 %type<parameterNode> parameter  
@@ -189,7 +189,7 @@ expr:     expr '+' expr { printx("\nexpr -> expr + expr\n");$$ = new Expression(
         | expr '-' expr { printx("\nexpr -> expr - expr\n");$$ = new Expression(OperTypes::SUB,$1,$3, $1->content +"-" + $3->content);  } 
         | expr '/' expr { printx("\nexpr -> expr / expr\n");$$ = new Expression(OperTypes::DIV,$1,$3, $1->content +"/" + $3->content);  } 
         | expr '*' expr { printx("\nexpr -> expr * expr\n");$$ = new Expression(OperTypes::MUL,$1,$3, $1->content +"*" + $3->content);  } 
-        //| '-' expr %prec UMINUS  { printx("\nexpr -> ( expr ) \n");$$ = $2; $$->uminus(); }  to do
+        //| '-' expr %prec UMINUS  { printx("\nexpr -> ( expr ) \n");$$ = $2; $$->neg(); }  to do
         | '(' expr ')' { printx("\nexpr -> ( expr ) \n");$$ = $2;}  
         | ID {printf("\nexpr -> ID\n");$$ = new Expression($1->content); delete $1;}; 
         | INT_NR {printf("\nexpr -> INT_NR\n");$$ = new Expression($1); };  

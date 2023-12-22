@@ -83,9 +83,9 @@ int row, col;
 
 void yyerror(const char * s);
 vector<int> arrayStack;
-TypeAndValue * arrayType;
+TypeNode * arrayType;
 class GeneralInfo;
-TypeAndValue * gReturnType;
+TypeNode * gReturnType;
 Expression* return_expression;
 
 #define checkSymbol(x) {if ( currentSymbolTable->is_symbol_defined_in_path(x->content)==nullptr) printf("\nsymbol not defined %s at %d:%d\n",x->content.c_str(),x->row,x->col); }
@@ -1392,7 +1392,7 @@ yyreduce:
 
   case 19: /* const_type: ISCONST TYPE  */
 #line 122 "limbaj.y"
-                         {(yyval.TypeAndValue) = (yyvsp[0].TypeAndValue); (yyval.TypeAndValue)->is_const = 1;}
+                         {(yyval.TypeNode) = (yyvsp[0].TypeNode); (yyval.TypeNode)->is_const = 1;}
 #line 1397 "limbaj.tab.c"
     break;
 
@@ -1411,7 +1411,7 @@ yyreduce:
   case 23: /* declaration: const_type ID init  */
 #line 128 "limbaj.y"
                                 { printx("\ndecl->const type id init;\n");
-                                            currentSymbolTable->define_symbol((yyvsp[-2].TypeAndValue),(yyvsp[-1].node)->content,(yyvsp[0].exprnode));  (yyval.node) = new GeneralInfo(""); delete (yyvsp[-2].TypeAndValue); delete (yyvsp[-1].node); delete (yyvsp[0].exprnode);}
+                                            currentSymbolTable->define_symbol((yyvsp[-2].TypeNode),(yyvsp[-1].node)->content,(yyvsp[0].exprnode));  (yyval.node) = new GeneralInfo(""); delete (yyvsp[-2].TypeNode); delete (yyvsp[-1].node); delete (yyvsp[0].exprnode);}
 #line 1416 "limbaj.tab.c"
     break;
 
@@ -1508,7 +1508,7 @@ yyreduce:
 
   case 39: /* func_signature: FN ID arguments return_type  */
 #line 159 "limbaj.y"
-                                     { printx("\nfunctions_s -> fn id arguments -> type {\n"); (yyval.funcNode) = new FunctionDetails((yyvsp[-2].node)->content,(yyvsp[0].TypeAndValue),(yyvsp[-1].container));
+                                     { printx("\nfunctions_s -> fn id arguments -> type {\n"); (yyval.funcNode) = new FunctionDetails((yyvsp[-2].node)->content,(yyvsp[0].TypeNode),(yyvsp[-1].container));
                                         currentSymbolTable=  currentSymbolTable->addFunction((yyval.funcNode));
                                         }
 #line 1515 "limbaj.tab.c"
@@ -1516,13 +1516,13 @@ yyreduce:
 
   case 40: /* return_type: RARROW const_type '{'  */
 #line 163 "limbaj.y"
-                                   {printx("\nreturn_type -> RARROW const_type {\n"); (yyval.TypeAndValue) = (yyvsp[-1].TypeAndValue); (yyvsp[-1].TypeAndValue)->print(); }
+                                   {printx("\nreturn_type -> RARROW const_type {\n"); (yyval.TypeNode) = (yyvsp[-1].TypeNode); (yyvsp[-1].TypeNode)->print(); }
 #line 1521 "limbaj.tab.c"
     break;
 
   case 41: /* return_type: '{'  */
 #line 164 "limbaj.y"
-             {printx("\nreturn_type - -> empty {\n"); (yyval.TypeAndValue) = nullptr;}
+             {printx("\nreturn_type - -> empty {\n"); (yyval.TypeNode) = nullptr;}
 #line 1527 "limbaj.tab.c"
     break;
 
@@ -1591,7 +1591,7 @@ yyreduce:
 
   case 52: /* parameter: const_type ID  */
 #line 185 "limbaj.y"
-                         { printx("\nparamter -> type id"); (yyval.parameterNode) = new Symbol((yyvsp[0].node)->content,(yyvsp[-1].TypeAndValue),nullptr);}
+                         { printx("\nparamter -> type id"); (yyval.parameterNode) = new Symbol((yyvsp[0].node)->content,(yyvsp[-1].TypeNode),nullptr);}
 #line 1596 "limbaj.tab.c"
     break;
 
@@ -1639,7 +1639,7 @@ yyreduce:
 
   case 60: /* expr: member_access  */
 #line 196 "limbaj.y"
-                        {printf("\nexpr -> member_access\n");(yyval.exprnode) = new Expression((yyvsp[0].TypeAndValue)); }
+                        {printf("\nexpr -> member_access\n");(yyval.exprnode) = new Expression((yyvsp[0].TypeNode)); }
 #line 1644 "limbaj.tab.c"
     break;
 
@@ -1735,7 +1735,7 @@ yyreduce:
 
   case 76: /* member_access: ID '.' ID  */
 #line 235 "limbaj.y"
-                         {printx("\nmember_access -> ID . ID \n"); (yyval.TypeAndValue) = currentSymbolTable->check_member_access((yyvsp[-2].node),(yyvsp[0].node));}
+                         {printx("\nmember_access -> ID . ID \n"); (yyval.TypeNode) = currentSymbolTable->check_member_access((yyvsp[-2].node),(yyvsp[0].node));}
 #line 1740 "limbaj.tab.c"
     break;
 
