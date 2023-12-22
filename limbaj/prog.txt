@@ -11,7 +11,7 @@ fn func() -> int {
 }
 
 test x();
-eval ( 10 + x.func()  );
+eval ( 10 + x );
 
 #
 

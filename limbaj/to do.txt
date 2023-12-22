@@ -1,11 +1,20 @@
-    * urgent 
-    types 
-better to store the type, need a better TypeAndValue
-can actually access element of an array and of a class;
 
-    classes
-initialization
+basic types: bool, char, float, string
 
-better define type
-eval 
-typeof 
+still to work on types
+are_types_equal : array comparison 
+
+check
+// have to provide detailed info about these errors, must use row and col from general node, and properly initialize it
+- whether symbol declared; also not more than once
+- s initialized ?
+- s is const when assigning?
+
+to complete the functionalities of expression
+
+arrays:
+- a[1][2] = expr;
+- eval ( a[1][2] + 3)
+
+
+structure the program in 4 sections
