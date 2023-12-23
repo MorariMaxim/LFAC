@@ -9,6 +9,7 @@ check
 - whether symbol declared; also not more than once
 - s initialized ?
 - s is const when assigning?
+- implement declaration and definition
 
 to complete the functionalities of expression
 

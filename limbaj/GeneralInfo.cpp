@@ -3,14 +3,14 @@
 #include <format>
 using namespace std;
 
-static int count = 0;
+static int debug_count = 0;
 
 void print_count(string s)
 {
     int debug = 1;
 
     if (debug)
-        printf("[%d] %s\n", count++, s.c_str());
+        printf("[%d] %s\n", debug_count++, s.c_str());
     fflush(stdout);
 }
 
@@ -147,6 +147,21 @@ bool Expression::are_types_equal(TypeNode *t1, TypeNode *t2)
     return true;
 }
 
+string Expression::get_leaf_id()
+{
+    if (oper == OperTypes::NONOPERATOR)
+    {
+        if (symbol_type)
+        {
+            if (sym)
+                return sym->name;
+        }
+        else
+            return "temp val";
+    }
+    return "?";
+}
+
 #define check_children_for_nullptr()     \
     {                                    \
         if (!left)                       \
@@ -265,6 +280,11 @@ ValueNode *Expression::eval()
     {
         ValueNode *temp1;
         auto temp2 = get_leaf_value();
+        if (!temp2)
+        {
+            printf("value of %s is unitialized!\n", get_leaf_id().c_str());
+            return nullptr;
+        }
         temp2->copy_to(temp1);
         print_count("leaf node\n");
         return temp1;
@@ -287,9 +307,36 @@ Expression::Expression(OperTypes op, Expression *left, Expression *right) : Gene
     vector<int> v;
 }
 
+Expression::Expression(ValueNode *vn)
+{
+    if (!vn)
+    {
+        printf("vn is nullptr");
+        return;
+    }
+    oper = OperTypes::NONOPERATOR;
+    symbol_type = false;
+    temp = new TempSymbol();
+    temp->value = vn;
+    temp->type = vn->type;
+}
+Expression::Expression(Symbol *sym)
+{
+
+    if (!sym)
+    {
+        printf("error during run time, being passed a nullptr symbol");
+    }
+    symbol_type = true;
+    this->sym = sym;
+    oper = OperTypes::NONOPERATOR;
+}
+
 Expression::Expression(string cont) : GeneralInfo(cont, -1, -1)
 {
     sym = currentSymbolTable->is_symbol_defined_in_path(cont);
+    oper = OperTypes::NONOPERATOR;
+    symbol_type = true;
 
     if (!sym)
     {
@@ -348,10 +395,11 @@ ValueNode *Expression::get_leaf_value()
 {
     if (oper == OperTypes::NONOPERATOR)
     {
-        if (symbol_type)
+        if (symbol_type && sym)
             return sym->value;
         else if (temp)
             return temp->value;
+        print_count("returning nullptr as leaf\n");
         return nullptr;
     }
 
@@ -549,8 +597,7 @@ FunctionCall::FunctionCall(GeneralInfo *scope_id, Vector *fnname_parameters) : V
             args->push_back(expr->eval());
         }
     }
-
-    print();
+    value = new IntValue("0");
 }
 void ArrayIndexing::add_index(Expression *rval)
 {
@@ -594,8 +641,14 @@ ArrayIndexing::ArrayIndexing(GeneralInfo *arr)
 
     indexes = new vector<ValueNode *>();
 }
+ArrayIndexing::ArrayIndexing()
+{
+    array = nullptr;
+}
+
 bool ArrayIndexing::check_indexes()
 {
+
     if (!indexes || !array)
     {
         notify("no indexes or no array\n");
@@ -610,9 +663,6 @@ bool ArrayIndexing::check_indexes()
     printf("\n");
 
     ArrayType *current_dimension = dynamic_cast<ArrayType *>(array->type);
-
-    int index_size = indexes->size();
-    int it = 0;
 
     for (auto &val : *indexes)
     {
@@ -650,76 +700,104 @@ ArrayType::ArrayType(TypeNode *et) : TypeNode(types::ARRAY)
     element_type = et;
 }
 
+ArrayType::ArrayType() : TypeNode(types::ARRAY)
+{
+}
+
+ArrayType::ArrayType(TypeNode *type, ArrayIndexing *arindex) : TypeNode(types::ARRAY)
+{
+    if (!arindex || !type || !arindex->indexes || arindex->indexes->size() == 0)
+    {
+        printf("a paramenter null in ArrayType constructor");
+        return;
+    }
+    int dimensions = arindex->indexes->size();
+    auto indexes = arindex->indexes;
+
+    ArrayType *current = this;
+    int i = 0;
+    for (; i < dimensions; i++)
+    {
+        auto vn = (*indexes)[i];
+        auto iv = dynamic_cast<IntValue *>(vn);
+        if (!iv || iv->value < 0)
+        {
+            notify("index not a usize ");
+        }
+        auto val = iv->value;
+
+        current->size = val;
+        if (i < dimensions - 1)
+        {
+            auto el = new ArrayType();
+            current->element_type = el;
+            current = el;
+        }
+        else
+        {
+            current->element_type = type;
+        }
+    }
+}
+
 ArrayType::~ArrayType()
 {
     delete element_type;
 }
 
-/*
-ArrayType *ArrayType::arrayBuiltFromStack = nullptr;
-void ArrayType::buildFromStack(int it)
+ValueNode *ArrayType::get_associated_value()
 {
-    if (it == 0)
+    return new ArrayValue(this);
+}
+
+string ArrayType::to_string()
+{
+    string indexing = "";
+    ArrayType *temp = this;
+
+    while (1)
     {
-        printf("array type = ");
-        printType(arrayType->type);
-        printf("\ndimensions : ");
-        for (auto &el : arrayStack)
-        {
-            printf("%d,", el);
-        }
-        printf("\n");
+
+        indexing += "[" + std::to_string(temp->size) + "]";
+
+        auto convert = dynamic_cast<ArrayType *>(temp->element_type);
+
+        if (!convert)
+            break;
+        else
+            temp = convert;
     }
 
-    int n = arrayStack.size();
-    this->type = types::ARRAY;
-    el_type = types::ARRAY;
-    this->size = arrayStack[it];
-    this->dimension = n - it;
+    return temp->element_type->to_string() + indexing;
+}
 
-    if (n == (it + 1))
-    {
-        types base_type;
-        vector<TypeNode *> *bottom_elements;
-        switch (arrayType->type) // to do
-        {
-        case FLOAT:
-            // printf("float\n");
-            base_type = types::FLOAT;
-            bottom_elements = new vector<TypeNode *>(this->size, new FloatType());
-            break;
-        case INT:
-            base_type = types::INT;
-            // printf("int\n");
-            bottom_elements = new vector<TypeNode *>(this->size, new IntType("0"));
-            break;
-        case CHAR:
-            base_type = types::CHAR;
-            // printf("char\n");
-            bottom_elements = new vector<TypeNode *>(this->size, new CharType());
-            break;
-        case STRING:
-            break;
-        default:
-            bottom_elements = new vector<TypeNode *>(this->size, new TypeNode(types::OTHER));
-            break;
-        }
-        elements = bottom_elements;
-        el_type = base_type;
-    }
-    else
-    {
-        elements = new vector<TypeNode *>(this->size, new ArrayType("", it + 1));
-    }
-    if (it == 0)
-    {
-        arrayStack.clear();
-    }
-}*/
-
-IntType::IntType(string s) : TypeNode(INT)
+IntType::IntType() : TypeNode(INT)
 {
     type = INT;
+}
+
+string IntType::to_string()
+{
+    return "int";
+}
+
+ValueNode *IntType::get_associated_value()
+{
+    return new IntValue("0");
+}
+
+void IntType::copy_to(TypeNode *&other)
+{
+    auto o = (IntType *)(other);
+    o = new IntType();
+    o->type = this->type;
+    other = o;
+};
+
+IntValue::IntValue(string number)
+{
+    type = new IntType();
+    value = atoi(number.c_str());
 }
 
 bool IntValue::add(ValueNode *other)
@@ -765,13 +843,29 @@ bool IntValue::lnot()
 void IntValue::copy_to(ValueNode *&other)
 {
     auto o = (IntValue *)(other);
-    o = new IntValue();
+    o = new IntValue("0");
     o->value = this->value;
     other = o;
+}
+ValueNode *IntValue::at(ArrayIndexing *ai, int start_index)
+{
+    if (!ai)
+        return nullptr;
+    int indx_size = ai->indexes->size();
+    if (indx_size == start_index)
+        return this;
+
+    printf("not an array\n");
+    return nullptr;
 }
 void IntValue::print()
 {
     printf("Integer with value = %d\n", value);
+}
+
+string IntValue::to_string()
+{
+    return std::to_string(value);
 }
 
 ClassObject::ClassObject(ClassType *ct)
@@ -783,8 +877,87 @@ ClassObject::ClassObject(ClassType *ct)
     }
 }
 
+string ClassObject::to_string()
+{
+    string res = "(";
+
+    for (auto &field : fields)
+    {
+
+        res += field.second->to_string() + "; ";
+    }
+    res += ")";
+
+    return res;
+}
+
 ClassType::ClassType(SymbolTable *ct) : TypeNode(types::USER_TYPE)
 {
     clas = ct;
 }
- 
+
+ClassType::ClassType(GeneralInfo *id) : TypeNode(types::USER_TYPE)
+{
+    clas = currentSymbolTable->isClassDefined(id->content);
+
+    if (!clas)
+    {
+        notify("%s isn't a class type", id->content.c_str());
+    }
+}
+
+string ClassType::to_string()
+{
+    if (clas)
+        return clas->name;
+    else
+        return TypeNode::to_string();
+}
+
+ArrayValue::ArrayValue(ArrayType *at)
+{
+    type = at;
+
+    if (!at)
+    {
+        printf("arraytyppe is null, cant construct arrayvalue");
+        return;
+    }
+
+    for (int i = 0; i < at->size; i++)
+    {
+        elements.push_back(at->element_type->get_associated_value());
+    }
+}
+
+string ArrayValue::to_string()
+{
+    string temp = "[";
+
+    for (auto &el : elements)
+    {
+
+        temp += el->to_string() + ",";
+    }
+    temp.erase(temp.size() - 1);
+    return temp + "]";
+}
+
+ValueNode *ArrayValue::at(ArrayIndexing *ai, int start_index)
+{
+    if (!ai)
+        return nullptr;
+    int indx_size = ai->indexes->size();
+    int els_size = elements.size();
+    if (indx_size == start_index)
+        return this;
+
+    auto convert = dynamic_cast<IntValue *>(ai->indexes->at(start_index));
+    if (!convert || convert->value < 0 || convert->value >= els_size)
+    {
+        printf("index out of bounds");
+        return nullptr;
+    }
+
+    return elements[convert->value]->at(ai, start_index + 1);
+}

@@ -19,6 +19,7 @@ public:
     ~Symbol();
 
     void printSymbol();
+    string to_string();
     string getSymbolAsString();
 };
 
@@ -42,7 +43,7 @@ public:
 
     SymbolTable(string name);
 
-    SymbolTable *newClass(GeneralInfo *gn);
+    SymbolTable *add_class(GeneralInfo *gn);
 
     SymbolTable *getParent();
     string getFullPath();
@@ -57,8 +58,8 @@ public:
 
     int define_symbol(TypeNode *tn, string name, Expression *value);
     int define_symbol(string name, Symbol *symbol);
-    int define_symbol(Symbol *symbol);
-    int define_array_symbol(string name, ArrayType *at);
+    int define_symbol(Symbol *symbol); 
+    Symbol* define_array_symbol(string name, TypeNode * type, ArrayIndexing * indexing);
     Symbol *create_temp_symbol(Expression *value_);
     Symbol *define_user_symbol(GeneralInfo *classId, GeneralInfo *symbolName);
     Symbol *define_user_symbol(GeneralInfo *classId, GeneralInfo *symbolName, Vector *init);
@@ -68,10 +69,12 @@ public:
     SymbolTable *addFunction(string name);
     SymbolTable *addClass(string name);
 
-    void setAsFunction(FunctionDetails *funcNode);
+    void setAsFunction(FunctionDetails *funcNode); 
 
-    //to do 
-    // method to add string,symbol* to a map and checking if already exists
+    bool insert_symbol(Symbol * sym);
+    bool insert_symbol(SymbolTable * st);
+
+    ValueNode* symbol_indexing(GeneralInfo * id, ArrayIndexing * indexing);
 };
 
 #endif

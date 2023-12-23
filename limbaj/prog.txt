@@ -1,17 +1,6 @@
-class test {
-fn func() -> int {
-    
-    int a = 10 * 2;
-    return a;
+int a[2][3][4];
 
-    return 10;
-
-    int a;
-}
-}
-
-test x();
-eval ( 10 + x );
+a[0][0][0][0][4]
 
 #
 

@@ -38,11 +38,11 @@ int treat_helper(int type) {
             case EVAL:
             printx("EVAK");col+=yyleng; return EVAL;
             break;
-            case TYPE:
-            printx("type"); yylval.TypeNode = new TypeNode(yytext); col+=yyleng; return TYPE; 
+            case BTYPE:
+            printx("type"); yylval.TypeNode = new TypeNode(yytext); col+=yyleng; return BTYPE; 
             break;
             case INT_TYPE:
-            printx("INT_TYPE"); yylval.TypeNode = new IntType(yytext); col+=yyleng; return TYPE; 
+            printx("INT_TYPE"); yylval.TypeNode = new IntType(); col+=yyleng; return BTYPE; 
             break;
             case BGIN:
             col+=yyleng; return BGIN;
@@ -57,7 +57,7 @@ int treat_helper(int type) {
             col+=yyleng; return ASSIGN;
             break;
             case INT_NR:
-            printx("INT_NR");yylval.node = new IntType(yytext);col+=yyleng; return INT_NR;
+            printx("INT_NR");yylval.int_value = new IntValue(yytext);col+=yyleng; return INT_NR;
             break;
             default:
             string s = ""; s+=yytext[0] ;printx(s); col+=yyleng; return yytext[0];
@@ -86,7 +86,7 @@ int treat_helper(int type) {
 "}"     {printx("}");col+=yyleng;ignore_after_return_statement = false; return '}';}
 
 "int" { treat_macro(INT_TYPE);}
-"float"|"char"|"string"|"void" {treat_macro(TYPE);} 
+"float"|"char"|"string"|"void" {treat_macro(BTYPE);} 
 "begin_progr" {treat_macro(BGIN);}
 "end_progr" {treat_macro(END);}
 [a-zA-Z][a-zA-Z0-9]* {treat_macro(ID);}

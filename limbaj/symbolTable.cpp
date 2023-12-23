@@ -1,11 +1,11 @@
 #include "symbolTable.h"
 #include "GeneralInfo.h"
 
-static int count = 0;
+static int debug_count = 0;
 void print_count2(string s)
 {
 
-    printf("[%d] %s\n", count++, s.c_str());
+    printf("[%d] %s\n", debug_count++, s.c_str());
     fflush(stdout);
 }
 
@@ -99,52 +99,20 @@ Symbol::~Symbol()
 
 void Symbol::printSymbol()
 {
+    cout << to_string() << endl;
+    ;
+}
+
+string Symbol::to_string()
+{
+    string temp = "";
 
     if (type)
-        cout << type->to_string();
-    // to do
-    /*    if (!type)
-        {
-            notify("typenode is nullptr");
-            return;
-        }
+        temp += type->to_string() + " " + name;
+    if (value)
+        temp += " = " + value->to_string();
 
-        if (this->type->type == USER_TYPE)
-        {
-            auto clas = dynamic_cast<ClassType *>(this->type);
-            if (clas)
-            {
-                printf("%s %s", clas->clas->name.c_str(), name.c_str());
-            }
-        }
-        else if (type->type == types::ARRAY)
-        {
-            ArrayType *temp = dynamic_cast<ArrayType *>(type);
-            if (!temp)
-            {
-                printf("dynamic cast failed\n");
-                return;
-            }
-
-            printf(" %s[%d]", this->name.c_str(), temp->size);
-
-            while (temp->dimension != 1)
-            {
-                temp = dynamic_cast<ArrayType *>((*temp->elements)[0]);
-                if (!temp)
-                {
-                    printf("dynamic cast failed\n");
-                    return;
-                }
-
-                printf("[%d]", temp->size);
-            }
-            printf("\n");
-        }
-        else
-        {
-            printf("%s %s\n", getTypeAsStr(type->type).c_str(), name.c_str());
-        }*/
+    return temp;
 }
 
 string Symbol::getSymbolAsString()
@@ -229,11 +197,11 @@ int SymbolTable::define_symbol(TypeNode *tn, string name, Expression *value)
     }
     auto it = symbols.find(name);
 
-    if (it != symbols.end()) {
+    if (it != symbols.end())
+    {
         notify("symbol %s already exists", name.c_str());
         return false;
     }
-        
 
     Symbol *symbol = new Symbol();
 
@@ -258,9 +226,10 @@ int SymbolTable::define_symbol(TypeNode *tn, string name, Expression *value)
 
     symbol->is_const = tn->is_const;
     symbol->name = name;
-    
+
     symbols.emplace(symbol->name, symbol);
 
+    symbol->printSymbol();
     return true;
 }
 
@@ -288,12 +257,17 @@ SymbolTable *SymbolTable::getParent()
     return parent;
 }
 
-SymbolTable *SymbolTable::newClass(GeneralInfo *gn)
+SymbolTable *SymbolTable::add_class(GeneralInfo *gn)
 {
     SymbolTable *newClassSope = new SymbolTable(gn->content);
     newClassSope->type = CLASS_SCOPE;
     newClassSope->parent = this;
-    checkInsertion(classes.emplace(newClassSope->name, newClassSope));
+    auto res = classes.emplace(newClassSope->name, newClassSope);
+    if (!res.second)
+    {
+        notify("class %s already declared ", newClassSope->name.c_str());
+        return nullptr;
+    }
     return newClassSope;
 }
 
@@ -301,7 +275,8 @@ SymbolTable *SymbolTable::addScope(string name)
 {
     SymbolTable *newScope = new SymbolTable(name);
     newScope->parent = this;
-    checkInsertion(other.emplace(newScope->name, newScope));
+    if (!insert_symbol(newScope))
+        return nullptr;
 
     return newScope;
 }
@@ -321,11 +296,11 @@ Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbo
     }
 
     Symbol *sym = new Symbol();
-    sym->type = new ClassType(cl);
+    auto ct = new ClassType(cl);
+    sym->type = ct;
+    sym->value = new ClassObject(ct);
     sym->name = symbolName->content; // to do, is_const;
     sym->is_init = false;
-
-
 
     symbols.emplace(sym->name, sym);
     return sym;
@@ -351,11 +326,12 @@ Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbo
 
     auto type = dynamic_cast<ClassType *>(sym->type);
 
-    if(sym->value) delete sym->value;
+    if (sym->value)
+        delete sym->value;
 
     auto object = new ClassObject(type);
     sym->value = object;
-    
+
     auto fields = &object->fields;
 
     auto class_fields = type->clas->symbols;
@@ -372,8 +348,6 @@ Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbo
             printf("no %s field\n", id->content.c_str());
             return nullptr;
         }
-
-        // to do
 
         auto val = expr->eval();
         if (!val)
@@ -393,8 +367,10 @@ Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbo
         }
 
         auto f = (*fields).at(id->content);
-
+        f->type = val->type;
         f->value = val;
+
+        printf("assigned to field %s value %s\n", f->name.c_str(), f->value->to_string().c_str());
     }
 
     return sym;
@@ -425,16 +401,54 @@ void SymbolTable::setAsFunction(FunctionDetails *funcNode)
     type = FUNC_SCOPE;
 }
 
-/*Symbol *SymbolTable::create_temp_symbol(Expression *value)
+bool SymbolTable::insert_symbol(Symbol *sym)
 {
-    Symbol *temp_symbol = new Symbol(0, types::OTHER, "", value);
 
-    temp_symbols.insert(temp_symbol);
+    auto res = symbols.emplace(sym->name, sym);
 
-    return temp_symbol;
+    if (!res.second)
+    {
+        notify("symbol %s already exists", sym->name.c_str());
+        return false;
+    }
+    return true;
 }
-*/
 
+bool SymbolTable::insert_symbol(SymbolTable *st)
+{
+    auto res = other.emplace(st->name, st);
+
+    if (!res.second)
+    {
+        notify("scope %s already exists", st->name.c_str());
+        return false;
+    }
+    return true;
+}
+
+ValueNode *SymbolTable::symbol_indexing(GeneralInfo *id, ArrayIndexing *indexing)
+{
+    auto sym = is_symbol_defined_in_path(id->content);
+
+    if (!sym)
+    {
+        printf("symbol %s not declared", id->content.c_str());
+        return nullptr;
+    }
+
+    auto val = sym->value;
+
+    auto convert = dynamic_cast<ArrayValue *>(val);
+
+    if (!convert)
+    {
+        printf("symbol %s not an array", id->content.c_str());
+        return nullptr;
+    }
+
+    return convert->at(indexing, 0);
+}
+ 
 FunctionDetails *SymbolTable::isFuncDefined(string name)
 {
     if (func_details)
@@ -464,7 +478,8 @@ SymbolTable *SymbolTable::addFunction(FunctionDetails *newFunc)
     int debug = 0;
     if (debug)
         printf("trying to insert %s\n", newFunc->name.c_str());
-    checkInsertion(functions.emplace(newScope->name, newScope));
+
+    functions.emplace(newScope->name, newScope);
 
     newScope->setAsFunction(newFunc);
     newFunc->setSignature();
@@ -479,38 +494,31 @@ SymbolTable *SymbolTable::addFunction(string name)
 
 int SymbolTable::define_symbol(Symbol *symbol)
 {
-    auto it = symbols.find(symbol->name);
-
-    if (it != symbols.end())
+    if (!insert_symbol(symbol))
         return false;
 
-    printf("Trying to insert %s\n", symbol->name.c_str());
-    checkInsertion(symbols.emplace(symbol->name, symbol));
     return true;
 }
 
-int SymbolTable::define_array_symbol(string name, ArrayType *at)
+Symbol *SymbolTable::define_array_symbol(string name, TypeNode *type, ArrayIndexing *indexing)
 {
-    if (isLocallyDefined(name))
-        return false;
+    auto at = new ArrayType(type, indexing);
+    Symbol *sym = new Symbol();
+    sym->name = name;
+    sym->type = at;
+    sym->is_const = type->is_const;
+    sym->value = new ArrayValue(at);
 
-    Symbol *as = new Symbol(name, at, nullptr);
-
-    printf("Trying to insert %s\n", name.c_str());
-    checkInsertion(symbols.emplace(name, as));
-    return true;
+    insert_symbol(sym);
+    return sym;
 }
 
 int SymbolTable::define_symbol(string name_, Symbol *symbol)
 {
-    auto it = symbols.find(name_);
-
-    if (it != symbols.end())
-        return false;
-
     symbol->name = name_;
-    printf("Trying to insert %s\n", name_.c_str());
-    checkInsertion(symbols.emplace(name_, symbol));
+
+    if (!insert_symbol(symbol))
+        return false;
     return true;
 }
 
@@ -527,28 +535,27 @@ Symbol *SymbolTable::isLocallyDefined(string name)
 Symbol *SymbolTable::check_member_access(GeneralInfo *id, GeneralInfo *member_id)
 {
     Symbol *sym = is_user_symbol_defined(id);
-
     if (!sym)
         return nullptr;
+    auto value = dynamic_cast<ClassObject *>(sym->value);
 
-    auto type = dynamic_cast<ClassType *>(sym->type);
-
-    if (!type)
+    if (!value)
     {
         printf("error at dynamic cast\n");
         return nullptr;
     }
-    auto symbols = &type->clas->symbols;
-    auto field = symbols->find(member_id->content);
 
-    if (field == symbols->end())
+    auto fields = &value->fields;
+    ;
+    auto field = fields->find(member_id->content);
+
+    if (field == fields->end())
     {
         printf("no %s member\n", member_id->content.c_str());
         return nullptr;
     }
 
     printf("correct member access\n");
- 
-
+    field->second->printSymbol();
     return field->second;
 }

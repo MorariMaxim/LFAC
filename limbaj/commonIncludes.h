@@ -13,24 +13,9 @@ class Vector;
 class TypeNode;
 class ValueNode;
 class ArrayType;
+class ArrayIndexing;
 using namespace std;
-
-#define checkInsertion(...)                                                                      \
-    {                                                                                            \
-        int debug = 0;                                                                           \
-        auto result = __VA_ARGS__;                                                               \
-        if (result.second)                                                                       \
-        {                                                                                        \
-            if (debug)                                                                           \
-                cout << "Insertion successful. Value: " << result.first->second << std::endl;    \
-        }                                                                                        \
-        else                                                                                     \
-        {                                                                                        \
-            if (debug)                                                                           \
-                cout << "Element already existed. Value: " << result.first->second << std::endl; \
-        }                                                                                        \
-    }
-
+ 
 enum types
 {
     INT,

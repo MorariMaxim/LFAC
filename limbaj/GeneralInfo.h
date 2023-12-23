@@ -17,77 +17,7 @@ public:
     void print();
     virtual ~GeneralInfo();
 };
-
-class TypeNode : public GeneralInfo
-{
-public:
-    bool is_const = 0;
-    types type;
-    TypeNode(types t) { type = t; };
-    TypeNode(string str);
-
-    virtual string  to_string(){ return "unspecialized type";};
-    virtual void copy_to(TypeNode *&other)
-    {
-        {
-            auto o = (TypeNode *)(other);
-            o = new TypeNode(types::OTHER);
-            o->type = this->type;
-            other = o;
-        };
-    };
-    virtual ~TypeNode();
-};
-
-class FloatType : public TypeNode
-{
-public:
-    FloatType() : TypeNode(FLOAT){};
-};
-class IntType : public TypeNode
-{
-public:
-    IntType(string s);
-};
-class StringType : public TypeNode
-{
-public:
-};
-class BoolType : public TypeNode
-{
-public:
-};
-class CharType : public TypeNode
-{
-public:
-    CharType() : TypeNode(FLOAT){};
-};
-class ArrayType : public TypeNode
-{
-public:
-    int size;
-    TypeNode *element_type;
-
-
-    ArrayType(TypeNode * et);
-    ~ArrayType();
-
-    /*void buildFromStack(int it);
-    static ArrayType *arrayBuiltFromStack;*/
-};
-
-struct TypeNodeIsConst
-{
-    TypeNode *tn;
-    bool is_const;
-};
-
-class ClassType : public TypeNode
-{
-public:
-    SymbolTable *clas;
-    ClassType(SymbolTable *ct); 
-};
+class ValueNode;
 
 class FunctionDetails : public GeneralInfo
 {
@@ -106,21 +36,21 @@ public:
 
 enum OperTypes
 {
+    NONOPERATOR,
     SUB,
     ADD,
     MUL,
     DIV,
     NEG,
-    LNOT,
-    NONOPERATOR
+    LNOT
 };
 
 class ValueNode
 {
 public:
     TypeNode *type;
-    ValueNode();
-    virtual ~ValueNode();
+    ValueNode(){};
+    virtual ~ValueNode(){};
 
     virtual bool add(ValueNode *other) { return false; };
     virtual bool sub(ValueNode *other) { return false; };
@@ -132,6 +62,8 @@ public:
 
     virtual void print() { printf("unimplemented\n"); };
 
+    virtual string to_string() { return "ValueNode"; };
+
     virtual void copy_to(ValueNode *&other)
     {
         {
@@ -141,31 +73,35 @@ public:
             other = o;
         };
     };
+
+    virtual ValueNode * at(ArrayIndexing* arindex,int start_index){ return this;};
 };
 
 class IntValue : public ValueNode
 {
 public:
     int value;
-    IntValue();
-    virtual bool add(ValueNode *other) ;
-    virtual bool sub(ValueNode *other) ;
-    virtual bool mul(ValueNode *other) ;
-    virtual bool div(ValueNode *other) ;
+    IntValue(string number);
+    virtual bool add(ValueNode *other);
+    virtual bool sub(ValueNode *other);
+    virtual bool mul(ValueNode *other);
+    virtual bool div(ValueNode *other);
 
-    virtual bool neg() ;
-    virtual bool lnot() ;
+    virtual bool neg();
+    virtual bool lnot();
 
     void print() override;
+    string to_string() override;
 
     virtual void copy_to(ValueNode *&other);
+    virtual ValueNode * at(ArrayIndexing* arindex,int start_index);
 };
- 
+
 class FunctionCall : public ValueNode
 {
 public:
     FunctionDetails *function_name;
-    vector<ValueNode*> *args;
+    vector<ValueNode *> *args;
     ValueNode *value;
     bool checkCall();
     FunctionCall(GeneralInfo *scope, Vector *rest);
@@ -203,21 +139,121 @@ public:
         };
     };
 };
-class ClassObject : public ValueNode {
-public:    
-    unordered_map<string, Symbol*> fields;
+class ClassType;
+class ClassObject : public ValueNode
+{
+public:
+    unordered_map<string, Symbol *> fields;
     ClassObject(ClassType *ct);
-};
 
+    string to_string() override;
+};
 
 class ArrayIndexing
 {
 public:
     Symbol *array;
-    vector<ValueNode *> *indexes;
+    vector<ValueNode *> *indexes = new vector<ValueNode*>();
     ArrayIndexing(GeneralInfo *ar);
+    ArrayIndexing();
     void add_index(Expression *val);
     bool check_indexes();
+
+
+};
+
+class ArrayValue : public ValueNode
+{
+public:
+    vector<ValueNode *> elements;
+    ArrayValue(ArrayType *at);
+
+    ValueNode * at(ArrayIndexing* arindex, int start_index) override;
+    string to_string() override;
+};
+class TypeNode : public GeneralInfo
+{
+public:
+    bool is_const = 0;
+    types type;
+    TypeNode(types t) { type = t; };
+    TypeNode(string str);
+
+    virtual string to_string() { return "unspecialized type"; };
+    virtual void copy_to(TypeNode *&other)
+    {
+        auto o = (TypeNode *)(other);
+        o = new TypeNode(types::OTHER);
+        o->type = this->type;
+        other = o;
+    };
+    virtual ~TypeNode();
+
+    virtual ValueNode *get_associated_value() { return new ValueNode(); };
+};
+
+class FloatType : public TypeNode
+{
+public:
+    FloatType() : TypeNode(FLOAT){};
+};
+class IntType : public TypeNode
+{
+public:
+    IntType();
+
+    string to_string() override;
+    ValueNode *get_associated_value() override;
+
+    void copy_to(TypeNode *&other) override;
+};
+class StringType : public TypeNode
+{
+public:
+};
+class BoolType : public TypeNode
+{
+public:
+};
+class CharType : public TypeNode
+{
+public:
+    CharType() : TypeNode(FLOAT){};
+};
+class ArrayType : public TypeNode
+{
+public:
+    int size;
+    TypeNode *element_type;
+
+    ArrayType(TypeNode *et);
+    ArrayType();
+    ArrayType(TypeNode *type, ArrayIndexing *arindex);
+    ~ArrayType();
+
+    string to_string() override;
+    ValueNode *get_associated_value() override;
+};
+
+struct TypeNodeIsConst
+{
+    TypeNode *tn;
+    bool is_const;
+};
+
+class ClassType : public TypeNode
+{
+public:
+    SymbolTable *clas;
+    ClassType(SymbolTable *ct);
+    ClassType(GeneralInfo *id);
+
+    string to_string() override;
+};
+struct TempSymbol
+{
+    TypeNode *type;
+    ValueNode *value;
 };
 
 class Expression : public GeneralInfo
@@ -228,32 +264,27 @@ public:
     bool symbol_type; // 1 for symbol; 0 for temp object
     union
     {
-        Symbol *sym;
-        struct
-        {
-            TypeNode *type;
-            ValueNode *value;
-        } *temp;
+        Symbol *sym = nullptr;
+        TempSymbol *temp;
     };
 
     Expression(OperTypes op, Expression *left, Expression *right);
-    Expression(TypeNode *tn, ValueNode *vn);
+    Expression(ValueNode *vn);
+    Expression(Symbol * sym);
     Expression(string identifier);
     virtual ~Expression();
 
     TypeNode *type();
     ValueNode *get_leaf_value(); // only if leaf node
     TypeNode *get_leaf_type();
+    string get_leaf_id();
     static bool are_types_equal(TypeNode *t1, TypeNode *t2);
 
     ValueNode *eval_wrapper();
     ValueNode *eval();
     ValueNode *eval_binary_operator();
     ValueNode *eval_unary_operator();
- 
 };
-
-
 
 class Vector
 {
@@ -264,3 +295,5 @@ public:
 };
 
 #endif
+
+ 
