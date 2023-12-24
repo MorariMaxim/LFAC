@@ -18,9 +18,12 @@ public:
     void setTo(string name, bool is_const, Expression *init); 
     ~Symbol();
 
-    void printSymbol();
-    string to_string();
-    string getSymbolAsString();
+    void print();
+    string to_string(); 
+
+    ValueNode * at(ArrayIndexing * indexing);
+    AssignResult assign(ValueNode * val);
+    AssignResult assign(ArrayIndexing *indexing, ValueNode * val);
 };
 
 class SymbolTable
@@ -52,29 +55,32 @@ public:
     Symbol *isLocallyDefined(string name);
     FunctionDetails *isFuncDefined(string name);
     SymbolTable *isClassDefined(string name);
-
+    
     Symbol *is_user_symbol_defined(GeneralInfo *id);
     Symbol *check_member_access(GeneralInfo *id, GeneralInfo *member_id);
 
     int define_symbol(TypeNode *tn, string name, Expression *value);
     int define_symbol(string name, Symbol *symbol);
     int define_symbol(Symbol *symbol); 
-    Symbol* define_array_symbol(string name, TypeNode * type, ArrayIndexing * indexing);
-    Symbol *create_temp_symbol(Expression *value_);
+    Symbol* define_array_symbol(string name, TypeNode * type, ArrayIndexing * indexing, Expression * init); 
     Symbol *define_user_symbol(GeneralInfo *classId, GeneralInfo *symbolName);
     Symbol *define_user_symbol(GeneralInfo *classId, GeneralInfo *symbolName, Vector *init);
 
     SymbolTable *addFunction(FunctionDetails *newScope);
 
-    SymbolTable *addFunction(string name);
-    SymbolTable *addClass(string name);
+    SymbolTable *addFunction(string name); 
 
     void setAsFunction(FunctionDetails *funcNode); 
 
     bool insert_symbol(Symbol * sym);
     bool insert_symbol(SymbolTable * st);
-
+    
     ValueNode* symbol_indexing(GeneralInfo * id, ArrayIndexing * indexing);
+  
+    bool assign(GeneralInfo * id, Expression * val, ArrayIndexing * indexing);
+    bool assign(GeneralInfo * id, GeneralInfo * member, Expression * val);
+
+    bool check_assign_result(AssignResult res, Symbol * id, ValueNode * rval );
 };
 
 #endif

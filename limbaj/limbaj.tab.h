@@ -80,7 +80,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 55 "limbaj.y"
+#line 56 "limbaj.y"
 
     class GeneralInfo* node; 
     class TypeNode* TypeNode;
@@ -95,8 +95,9 @@ union YYSTYPE
     class IntType * int_type;
     class IntValue * int_value;
     class ValueNode * value_node;
+    class ArrayValue * array_value_node; 
 
-#line 100 "limbaj.tab.h"
+#line 101 "limbaj.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

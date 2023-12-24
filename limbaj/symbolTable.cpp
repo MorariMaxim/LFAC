@@ -1,6 +1,8 @@
 #include "symbolTable.h"
 #include "GeneralInfo.h"
 
+#define symbol_not_declared(s) printf("variable %s not declared\n", s.c_str());
+
 static int debug_count = 0;
 void print_count2(string s)
 {
@@ -97,7 +99,7 @@ Symbol::~Symbol()
     delete type;
 }
 
-void Symbol::printSymbol()
+void Symbol::print()
 {
     cout << to_string() << endl;
     ;
@@ -115,9 +117,47 @@ string Symbol::to_string()
     return temp;
 }
 
-string Symbol::getSymbolAsString()
+ValueNode *Symbol::at(ArrayIndexing *indexing)
 {
-    return type->to_string() + name;
+    if (!value)
+        return nullptr;
+
+    auto convert = dynamic_cast<ArrayValue *>(value);
+
+    if (!convert)
+    {
+        printf("symbol %s is not an array", name.c_str());
+        return nullptr;
+    }
+
+    auto res = convert->at(indexing, 0);
+
+    if (res)
+        res->print();
+    return res;
+}
+
+AssignResult Symbol::assign(ValueNode *val)
+{
+    if (is_const)
+        return AssignResult::ISCONST;
+
+    if (!value)
+        value = type->get_associated_value();
+    return this->value->assign(val);
+}
+
+AssignResult Symbol::assign(ArrayIndexing *indexing, ValueNode *val)
+{
+    if (is_const)
+        return AssignResult::ISCONST;
+
+    if (!value)
+        value = type->get_associated_value();
+
+    auto el = value->at(indexing, 0);
+
+    return el->assign(val);
 }
 
 SymbolTable::SymbolTable(string name) : name(name)
@@ -162,7 +202,7 @@ void SymbolTable::printTable(int depth)
     {
         indent(depth + 1);
 
-        symbol.second->printSymbol();
+        symbol.second->print();
     }
 }
 
@@ -190,6 +230,7 @@ Symbol *SymbolTable::is_symbol_defined_in_path(string name)
 }
 int SymbolTable::define_symbol(TypeNode *tn, string name, Expression *value)
 {
+    printf("assigning to %s\n", name.c_str());
     if (!tn)
     {
         nullptr_error(" type node was nullptr");
@@ -199,7 +240,7 @@ int SymbolTable::define_symbol(TypeNode *tn, string name, Expression *value)
 
     if (it != symbols.end())
     {
-        notify("symbol %s already exists", name.c_str());
+        semantic_error("symbol %s already exists", name.c_str());
         return false;
     }
 
@@ -208,12 +249,13 @@ int SymbolTable::define_symbol(TypeNode *tn, string name, Expression *value)
     if (value)
     {
         auto res = value->eval();
+
         if (!res || !Expression::are_types_equal(tn, res->type))
         {
-            notify("disonance between type value and initialization value\n");
+            semantic_error("disonance between type value and initialization value\n");
             return false;
         }
-
+        printf("assigning %s to %s\n", res->to_string().c_str(), name.c_str());
         symbol->type = res->type;
         symbol->value = res;
         symbol->is_init = true;
@@ -229,7 +271,7 @@ int SymbolTable::define_symbol(TypeNode *tn, string name, Expression *value)
 
     symbols.emplace(symbol->name, symbol);
 
-    symbol->printSymbol();
+    symbol->print();
     return true;
 }
 
@@ -265,7 +307,7 @@ SymbolTable *SymbolTable::add_class(GeneralInfo *gn)
     auto res = classes.emplace(newClassSope->name, newClassSope);
     if (!res.second)
     {
-        notify("class %s already declared ", newClassSope->name.c_str());
+        semantic_error("class %s already declared ", newClassSope->name.c_str());
         return nullptr;
     }
     return newClassSope;
@@ -408,7 +450,7 @@ bool SymbolTable::insert_symbol(Symbol *sym)
 
     if (!res.second)
     {
-        notify("symbol %s already exists", sym->name.c_str());
+        semantic_error("symbol %s already exists", sym->name.c_str());
         return false;
     }
     return true;
@@ -420,7 +462,7 @@ bool SymbolTable::insert_symbol(SymbolTable *st)
 
     if (!res.second)
     {
-        notify("scope %s already exists", st->name.c_str());
+        semantic_error("scope %s already exists", st->name.c_str());
         return false;
     }
     return true;
@@ -436,19 +478,64 @@ ValueNode *SymbolTable::symbol_indexing(GeneralInfo *id, ArrayIndexing *indexing
         return nullptr;
     }
 
-    auto val = sym->value;
+    return sym->at(indexing);
+}
 
-    auto convert = dynamic_cast<ArrayValue *>(val);
+bool SymbolTable::assign(GeneralInfo *id, Expression *expr, ArrayIndexing *indexing)
+{
+    auto sym = is_symbol_defined_in_path(id->content);
 
-    if (!convert)
+    if (!sym)
     {
-        printf("symbol %s not an array", id->content.c_str());
-        return nullptr;
+        symbol_not_declared(id->content);
+        return false;
     }
 
-    return convert->at(indexing, 0);
+    auto val = expr->eval();
+
+    if (!val)
+    {
+        printf("couldn't evaluate expression");
+        return false;
+    }
+    AssignResult res;
+    if (!indexing)
+        res = sym->assign(val);
+    else
+        res = sym->assign(indexing, val);
+
+    return check_assign_result(res, sym, val);
 }
- 
+
+bool SymbolTable::assign(GeneralInfo *id, GeneralInfo *member, Expression *val)
+{
+    return false;
+}
+
+bool SymbolTable::check_assign_result(AssignResult res, Symbol *id, ValueNode *rval)
+{
+    switch (res)
+    {
+    case AssignResult::OK:
+        return true;
+        break;
+    case AssignResult::OTHERAR:
+        return false;
+        break;
+    case AssignResult::DIFTYPE:
+        semantic_error("couldn't assign %s to %s, different types (%s vs %s)\n", rval->to_string().c_str(), id->name.c_str(), rval->type->to_string().c_str(), id->type->to_string().c_str());
+        return false;
+        break;
+    case AssignResult::ISCONST:
+        semantic_error("couldn't assign %s to %s, which is constant \n", rval->to_string().c_str(), id->name.c_str());
+        return false;
+        break;
+    default:
+        return false;
+        break;
+    }
+}
+
 FunctionDetails *SymbolTable::isFuncDefined(string name)
 {
     if (func_details)
@@ -500,7 +587,7 @@ int SymbolTable::define_symbol(Symbol *symbol)
     return true;
 }
 
-Symbol *SymbolTable::define_array_symbol(string name, TypeNode *type, ArrayIndexing *indexing)
+Symbol *SymbolTable::define_array_symbol(string name, TypeNode *type, ArrayIndexing *indexing, Expression *init)
 {
     auto at = new ArrayType(type, indexing);
     Symbol *sym = new Symbol();
@@ -508,6 +595,13 @@ Symbol *SymbolTable::define_array_symbol(string name, TypeNode *type, ArrayIndex
     sym->type = at;
     sym->is_const = type->is_const;
     sym->value = new ArrayValue(at);
+
+    if (init)
+    {
+        auto val = init->eval();
+        if (val)
+            sym->value->assign(val);
+    }
 
     insert_symbol(sym);
     return sym;
@@ -556,6 +650,6 @@ Symbol *SymbolTable::check_member_access(GeneralInfo *id, GeneralInfo *member_id
     }
 
     printf("correct member access\n");
-    field->second->printSymbol();
+    field->second->print();
     return field->second;
 }

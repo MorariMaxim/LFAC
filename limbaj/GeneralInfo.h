@@ -4,8 +4,17 @@
 #include "symbolTable.h"
 #include <thread>
 #include <chrono>
-void printx(string str);
+class Vector
+{
+public:
+    std::vector<void *> pointers;
 
+    void add_element(void *ptr);
+};
+
+
+void print_reduction(string str);
+void print_token(string str, Colours color = Colours::DEFAULTCOL);
 class GeneralInfo
 {
 public:
@@ -44,7 +53,7 @@ enum OperTypes
     NEG,
     LNOT
 };
-
+class TypeNode;
 class ValueNode
 {
 public:
@@ -60,21 +69,21 @@ public:
     virtual bool neg() { return false; };
     virtual bool lnot() { return false; };
 
-    virtual void print() { printf("unimplemented\n"); };
+    virtual void print() { cout << this->to_string() << endl; };
 
     virtual string to_string() { return "ValueNode"; };
 
     virtual void copy_to(ValueNode *&other)
     {
-        {
-            auto o = (ValueNode *)(other);
-            o = new ValueNode();
-            o->type = this->type;
-            other = o;
-        };
+        auto o = (ValueNode *)(other);
+        o = new ValueNode();
+        o->type = this->type;
+        other = o;
     };
 
-    virtual ValueNode * at(ArrayIndexing* arindex,int start_index){ return this;};
+    virtual ValueNode *at(ArrayIndexing *arindex, int start_index) { return nullptr; };
+
+    virtual AssignResult assign(ValueNode *vn) { return AssignResult::OTHERAR; };
 };
 
 class IntValue : public ValueNode
@@ -82,19 +91,21 @@ class IntValue : public ValueNode
 public:
     int value;
     IntValue(string number);
-    virtual bool add(ValueNode *other);
-    virtual bool sub(ValueNode *other);
-    virtual bool mul(ValueNode *other);
-    virtual bool div(ValueNode *other);
+    virtual bool add(ValueNode *other) override;
+    virtual bool sub(ValueNode *other) override;
+    virtual bool mul(ValueNode *other) override;
+    virtual bool div(ValueNode *other) override;
 
-    virtual bool neg();
-    virtual bool lnot();
+    virtual bool neg() override;
+    virtual bool lnot() override;
 
     void print() override;
     string to_string() override;
 
-    virtual void copy_to(ValueNode *&other);
-    virtual ValueNode * at(ArrayIndexing* arindex,int start_index);
+    virtual void copy_to(ValueNode *&other) override;
+    virtual ValueNode *at(ArrayIndexing *arindex, int start_index) override;
+
+    AssignResult assign(ValueNode *val) override;
 };
 
 class FunctionCall : public ValueNode
@@ -153,13 +164,11 @@ class ArrayIndexing
 {
 public:
     Symbol *array;
-    vector<ValueNode *> *indexes = new vector<ValueNode*>();
+    vector<ValueNode *> *indexes = new vector<ValueNode *>();
     ArrayIndexing(GeneralInfo *ar);
     ArrayIndexing();
     void add_index(Expression *val);
     bool check_indexes();
-
-
 };
 
 class ArrayValue : public ValueNode
@@ -167,9 +176,15 @@ class ArrayValue : public ValueNode
 public:
     vector<ValueNode *> elements;
     ArrayValue(ArrayType *at);
+    ArrayValue();
 
-    ValueNode * at(ArrayIndexing* arindex, int start_index) override;
+    ArrayValue(Vector *init);
+    bool add_element(ValueNode *val);
+    bool mul(ValueNode *other) override;
+    AssignResult assign(ValueNode *vn) override;
+    ValueNode *at(ArrayIndexing *arindex, int start_index) override;
     string to_string() override;
+    void copy_to(ValueNode *&other) override;
 };
 class TypeNode : public GeneralInfo
 {
@@ -190,6 +205,8 @@ public:
     virtual ~TypeNode();
 
     virtual ValueNode *get_associated_value() { return new ValueNode(); };
+
+    virtual bool is_equal(TypeNode *other) { return false; };
 };
 
 class FloatType : public TypeNode
@@ -206,6 +223,7 @@ public:
     ValueNode *get_associated_value() override;
 
     void copy_to(TypeNode *&other) override;
+    bool is_equal(TypeNode *other) override;
 };
 class StringType : public TypeNode
 {
@@ -231,8 +249,11 @@ public:
     ArrayType(TypeNode *type, ArrayIndexing *arindex);
     ~ArrayType();
 
+    bool is_equal(TypeNode *other) override;
     string to_string() override;
     ValueNode *get_associated_value() override;
+
+    void copy_to(TypeNode *&other) override;
 };
 
 struct TypeNodeIsConst
@@ -248,6 +269,7 @@ public:
     ClassType(SymbolTable *ct);
     ClassType(GeneralInfo *id);
 
+    bool is_equal(TypeNode *other) override;
     string to_string() override;
 };
 struct TempSymbol
@@ -270,7 +292,7 @@ public:
 
     Expression(OperTypes op, Expression *left, Expression *right);
     Expression(ValueNode *vn);
-    Expression(Symbol * sym);
+    Expression(Symbol *sym);
     Expression(string identifier);
     virtual ~Expression();
 
@@ -286,14 +308,4 @@ public:
     ValueNode *eval_unary_operator();
 };
 
-class Vector
-{
-public:
-    std::vector<void *> pointers;
-
-    void add_pointer(void *ptr);
-};
-
 #endif
-
- 

@@ -517,19 +517,19 @@ int treat_helper(int type) {
     if(!ignore_after_return_statement){
         switch (type) {
             case RARROW:
-            printx("->"); col+=yyleng; return RARROW;
+            print_token("->", Colours::CFCOL); col+=yyleng; return RARROW;
             break;
             case FN:
-            printx("fn");col+=yyleng; return FN;
+            print_token("fn", Colours::CFCOL);col+=yyleng; return FN;
             break;
             case CLASS:
-            printx("class");col+=yyleng; return CLASS;
+            print_token("class", Colours::TYPECOL);col+=yyleng; return CLASS;
             break;
             case IF:
-            printx("if");col+=yyleng; return IF;
+            print_token("if", Colours::CFCOL);col+=yyleng; return IF;
             break;
             case RETURN:
-            printx("RETURN");col+=yyleng; return RETURN;
+            print_token("RETURN", Colours::CFCOL);col+=yyleng; return RETURN;
             break;
             case WHILE:
              col+=yyleng; return WHILE;
@@ -541,16 +541,16 @@ int treat_helper(int type) {
             col+=yyleng; return ELSE;
             break;
             case CONST:
-            printx("CONST");col+=yyleng; return CONST;
+            print_token("CONST", Colours::TYPECOL);col+=yyleng; return CONST;
             break;
             case EVAL:
-            printx("EVAK");col+=yyleng; return EVAL;
+            print_token("EVAL");col+=yyleng; return EVAL;
             break;
             case BTYPE:
-            printx("type"); yylval.TypeNode = new TypeNode(yytext); col+=yyleng; return BTYPE; 
+            print_token("type"); yylval.TypeNode = new TypeNode(yytext); col+=yyleng; return BTYPE; 
             break;
             case INT_TYPE:
-            printx("INT_TYPE"); yylval.TypeNode = new IntType(); col+=yyleng; return BTYPE; 
+            print_token("INTTYPE", Colours::TYPECOL); yylval.TypeNode = new IntType(); col+=yyleng; return BTYPE; 
             break;
             case BGIN:
             col+=yyleng; return BGIN;
@@ -559,16 +559,16 @@ int treat_helper(int type) {
             col+=yyleng; return END;
             break;
             case ID:
-            printx("ID");yylval.node = new GeneralInfo(yytext,row,col); col+=yyleng; return ID;
+            print_token("ID",Colours::IDCOL);yylval.node = new GeneralInfo(yytext,row,col); col+=yyleng; return ID;
             break;
             case ASSIGN:
             col+=yyleng; return ASSIGN;
             break;
             case INT_NR:
-            printx("INT_NR");yylval.int_value = new IntValue(yytext);col+=yyleng; return INT_NR;
+            print_token("INTVAL", Colours::VALCOL);yylval.int_value = new IntValue(yytext);col+=yyleng; return INT_NR;
             break;
             default:
-            string s = ""; s+=yytext[0] ;printx(s); col+=yyleng; return yytext[0];
+            string s = ""; s+=yytext[0] ;print_token(s); col+=yyleng; return yytext[0];
         }        
     } 
     return IGNORETOKEN; 
@@ -871,12 +871,12 @@ YY_RULE_SETUP
 case 4:
 YY_RULE_SETUP
 #line 77 "limbaj.l"
-{printx("private:");col+=yyleng; }
+{print_token("private:");col+=yyleng; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
 #line 78 "limbaj.l"
-{printx("public:");;col+=yyleng; }
+{print_token("public:");;col+=yyleng; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
@@ -916,7 +916,7 @@ YY_RULE_SETUP
 case 13:
 YY_RULE_SETUP
 #line 86 "limbaj.l"
-{printx("}");col+=yyleng;ignore_after_return_statement = false; return '}';}
+{print_token("}");col+=yyleng;ignore_after_return_statement = false; return '}';}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
@@ -962,13 +962,13 @@ YY_RULE_SETUP
 case 22:
 YY_RULE_SETUP
 #line 96 "limbaj.l"
-{printx("_");col+=yyleng;};
+{print_token("_");col+=yyleng;};
 	YY_BREAK
 case 23:
 /* rule 23 can match eol */
 YY_RULE_SETUP
 #line 97 "limbaj.l"
-{printx("NL\n");row++;col=1;}
+{print_token("NL\n");row++;col=1;}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP

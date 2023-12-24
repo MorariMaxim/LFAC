@@ -9,19 +9,19 @@ int treat_helper(int type) {
     if(!ignore_after_return_statement){
         switch (type) {
             case RARROW:
-            printx("->"); col+=yyleng; return RARROW;
+            print_token("->", Colours::CFCOL); col+=yyleng; return RARROW;
             break;
             case FN:
-            printx("fn");col+=yyleng; return FN;
+            print_token("fn", Colours::CFCOL);col+=yyleng; return FN;
             break;
             case CLASS:
-            printx("class");col+=yyleng; return CLASS;
+            print_token("class", Colours::TYPECOL);col+=yyleng; return CLASS;
             break;
             case IF:
-            printx("if");col+=yyleng; return IF;
+            print_token("if", Colours::CFCOL);col+=yyleng; return IF;
             break;
             case RETURN:
-            printx("RETURN");col+=yyleng; return RETURN;
+            print_token("RETURN", Colours::CFCOL);col+=yyleng; return RETURN;
             break;
             case WHILE:
              col+=yyleng; return WHILE;
@@ -33,16 +33,16 @@ int treat_helper(int type) {
             col+=yyleng; return ELSE;
             break;
             case CONST:
-            printx("CONST");col+=yyleng; return CONST;
+            print_token("CONST", Colours::TYPECOL);col+=yyleng; return CONST;
             break;
             case EVAL:
-            printx("EVAK");col+=yyleng; return EVAL;
+            print_token("EVAL");col+=yyleng; return EVAL;
             break;
             case BTYPE:
-            printx("type"); yylval.TypeNode = new TypeNode(yytext); col+=yyleng; return BTYPE; 
+            print_token("type"); yylval.TypeNode = new TypeNode(yytext); col+=yyleng; return BTYPE; 
             break;
             case INT_TYPE:
-            printx("INT_TYPE"); yylval.TypeNode = new IntType(); col+=yyleng; return BTYPE; 
+            print_token("INTTYPE", Colours::TYPECOL); yylval.TypeNode = new IntType(); col+=yyleng; return BTYPE; 
             break;
             case BGIN:
             col+=yyleng; return BGIN;
@@ -51,16 +51,16 @@ int treat_helper(int type) {
             col+=yyleng; return END;
             break;
             case ID:
-            printx("ID");yylval.node = new GeneralInfo(yytext,row,col); col+=yyleng; return ID;
+            print_token("ID",Colours::IDCOL);yylval.node = new GeneralInfo(yytext,row,col); col+=yyleng; return ID;
             break;
             case ASSIGN:
             col+=yyleng; return ASSIGN;
             break;
             case INT_NR:
-            printx("INT_NR");yylval.int_value = new IntValue(yytext);col+=yyleng; return INT_NR;
+            print_token("INTVAL", Colours::VALCOL);yylval.int_value = new IntValue(yytext);col+=yyleng; return INT_NR;
             break;
             default:
-            string s = ""; s+=yytext[0] ;printx(s); col+=yyleng; return yytext[0];
+            string s = ""; s+=yytext[0] ;print_token(s); col+=yyleng; return yytext[0];
         }        
     } 
     return IGNORETOKEN; 
@@ -74,8 +74,8 @@ int treat_helper(int type) {
 "->" {treat_macro(RARROW);}
 "fn" {treat_macro(FN);}
 "class" {treat_macro(CLASS);}
-"private:" {printx("private:");col+=yyleng; }
-"public:" {printx("public:");;col+=yyleng; }
+"private:" {print_token("private:");col+=yyleng; }
+"public:" {print_token("public:");;col+=yyleng; }
 "if" {treat_macro(IF);}
 "return" {treat_macro(RETURN);}
 "while" {treat_macro(WHILE);}
@@ -83,7 +83,7 @@ int treat_helper(int type) {
 "else" {treat_macro(ELSE);}
 "const" {treat_macro(CONST);}
 "eval"  {treat_macro(EVAL);}
-"}"     {printx("}");col+=yyleng;ignore_after_return_statement = false; return '}';}
+"}"     {print_token("}");col+=yyleng;ignore_after_return_statement = false; return '}';}
 
 "int" { treat_macro(INT_TYPE);}
 "float"|"char"|"string"|"void" {treat_macro(BTYPE);} 
@@ -93,8 +93,8 @@ int treat_helper(int type) {
 ":=" {treat_macro(ASSIGN);}
 [-+]{0,1}[0-9]+ {treat_macro(INT_NR);}
 "#"[^#]*"#" {}
-[ \t] {printx("_");col+=yyleng;};
-\n {printx("NL\n");row++;col=1;}
+[ \t] {print_token("_");col+=yyleng;};
+\n {print_token("NL\n");row++;col=1;}
 
 . {treat_macro(yytext[0]);}
 

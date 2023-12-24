@@ -5,7 +5,8 @@ using namespace std;
 
 static int debug_count = 0;
 
-void print_count(string s)
+#define unequal_types_error(t1, t2) semantic_error("different types: %s vs %s", t1->to_string().c_str(), t1->to_string().c_str())
+void debug_print(string s)
 {
     int debug = 1;
 
@@ -90,59 +91,58 @@ GeneralInfo::~GeneralInfo()
     if (debug)
         printf("destructing  GeneralInfo (%s)\n", content.c_str());
 }
+string col_2_ansi(Colours col)
+{
 
-void printx(string str)
+    switch (col)
+    {
+    case IDCOL:
+        return "51";
+    case TYPECOL:
+        return "21";
+    case CFCOL:
+        return "127";
+    case VALCOL:
+        return "82";
+    default:
+        return "8";
+        break;
+    }
+}
+void print_reduction(string str)
 {
 
     static int debug = 1, delay = 0;
     if (debug)
     {
-        printf("%s", str.c_str());
+        printf("\033[38;5;31m\n%s\n\033[0m", str.c_str());
         fflush(stdin);
     }
     if (delay)
         this_thread::sleep_for(std::chrono::milliseconds(100));
 }
-
+void print_token(string str, Colours col)
+{
+    static int debug = 1, delay = 0;
+    if (debug)
+    {
+        printf("\033[38;5;%sm%s\033[0m", col_2_ansi(col).c_str(), str.c_str());
+        fflush(stdin);
+    }
+    if (delay)
+        this_thread::sleep_for(std::chrono::milliseconds(100));
+}
 bool Expression::are_types_equal(TypeNode *t1, TypeNode *t2)
 {
     if (!t1 || !t2)
     {
-        printf("one is null\n");
+        debug_print("one is null\n");
         return false;
     }
-    if (t1->type != t2->type)
+    if (!t1->is_equal(t2))
     {
-        printf("not equal types\n");
-
-        t1->print();
-        t2->print();
+        unequal_types_error(t1, t2);
         return false;
-    }
-    if (t1->type == types::USER_TYPE)
-    {
-
-        auto clas = dynamic_cast<ClassType *>(t1);
-
-        if (!clas)
-        {
-            printf("error at dynamic cast \n");
-            return false;
-        }
-        string name1 = clas->clas->name;
-        clas = dynamic_cast<ClassType *>(t1);
-
-        if (!clas)
-        {
-            printf("error at dynamic cast \n");
-            return false;
-        }
-        string name2 = clas->clas->name;
-
-        printf("here 1");
-        fflush(stdout);
-        if (name1 != name2)
-            return false;
     }
     return true;
 }
@@ -178,51 +178,55 @@ string Expression::get_leaf_id()
 
 ValueNode *Expression::eval_binary_operator()
 {
-    print_count("eval binary \n");
+    debug_print("eval binary");
     auto t1 = left->eval();
     auto t2 = right->eval();
 
     if (!t1 || !t2)
     {
-        print_count("one is null\n");
+        debug_print("one is null");
         return nullptr;
     }
-
+    if (!t1->type->is_equal(t2->type))
+    {
+        semantic_error("different types: %s vs %s", t1->type->to_string().c_str(), t2->type->to_string().c_str());
+        return nullptr;
+    }
     switch (oper)
     {
     case OperTypes::SUB:
     {
-        print_count("sub ");
+        debug_print("sub ");
         t1->sub(t2);
         break;
     }
     case OperTypes::ADD:
     {
-        print_count("add ");
+        debug_print("add ");
         t1->add(t2);
         break;
     }
     case OperTypes::MUL:
     {
-        print_count("mul ");
+        debug_print("mul ");
         t1->mul(t2);
         break;
     }
     case OperTypes::DIV:
     {
-        print_count("div ");
+        debug_print("div ");
         t1->div(t2);
         break;
     }
     case OperTypes::NEG:
     {
-        print_count("neg");
+        debug_print("neg");
         t1->neg();
         break;
     }
     case OperTypes::LNOT:
     {
-        print_count("!");
+        debug_print("!");
         t1->lnot();
         break;
     }
@@ -230,27 +234,27 @@ ValueNode *Expression::eval_binary_operator()
         return nullptr;
     }
 
-    print_count("return ");
+    debug_print("return ");
     return t1;
 }
 ValueNode *Expression::eval_wrapper()
 {
-    print_count("going to eval expression\n");
+    debug_print("going to eval expression");
 
     auto t = eval();
-    print_count("out\n");
+    debug_print("out");
 
     if (t)
         t->print();
     else
     {
-        printf("coulnd't evaluate expression\n");
+        semantic_error("coulnd't evaluate expression");
     }
     return t;
 }
 ValueNode *Expression::eval_unary_operator()
 {
-    print_count("eval unary");
+    debug_print("eval unary");
     auto t1 = left->eval();
     if (!t1)
         return nullptr;
@@ -274,7 +278,7 @@ ValueNode *Expression::eval_unary_operator()
 }
 ValueNode *Expression::eval()
 {
-    print_count("eval call\n");
+    debug_print("eval call");
 
     if (oper == NONOPERATOR)
     {
@@ -282,11 +286,12 @@ ValueNode *Expression::eval()
         auto temp2 = get_leaf_value();
         if (!temp2)
         {
-            printf("value of %s is unitialized!\n", get_leaf_id().c_str());
+            printf("value of %s is unitialized!", get_leaf_id().c_str());
             return nullptr;
         }
         temp2->copy_to(temp1);
-        print_count("leaf node\n");
+        temp2->print();
+        debug_print("leaf node");
         return temp1;
     }
 
@@ -311,7 +316,7 @@ Expression::Expression(ValueNode *vn)
 {
     if (!vn)
     {
-        printf("vn is nullptr");
+        debug_print("vn is nullptr");
         return;
     }
     oper = OperTypes::NONOPERATOR;
@@ -340,7 +345,7 @@ Expression::Expression(string cont) : GeneralInfo(cont, -1, -1)
 
     if (!sym)
     {
-        notify("%s not declared\n", cont.c_str());
+        semantic_error("%s not declared\n", cont.c_str());
     }
 }
 
@@ -399,7 +404,7 @@ ValueNode *Expression::get_leaf_value()
             return sym->value;
         else if (temp)
             return temp->value;
-        print_count("returning nullptr as leaf\n");
+        debug_print("returning nullptr as leaf\n");
         return nullptr;
     }
 
@@ -473,7 +478,7 @@ void FunctionDetails::print_parameters()
 
     for (auto par : *parameters)
     {
-        par->printSymbol();
+        par->print();
     }
 }
 
@@ -485,7 +490,7 @@ void FunctionDetails::setSignature()
     {
         for (auto par : *parameters)
         {
-            temp += par->getSymbolAsString() + ", ";
+            temp += par->to_string() + ", ";
         }
         temp.erase(temp.size() - 2, 2);
     }
@@ -563,7 +568,7 @@ FunctionCall::FunctionCall(GeneralInfo *scope_id, Vector *fnname_parameters) : V
     GeneralInfo *fn_name = (GeneralInfo *)(fnname_parameters->pointers[0]);
 
     if (!fn_name)
-        notify("funcname is nullptr\n");
+        semantic_error("funcname is nullptr\n");
 
     auto funcnode = scope->isFuncDefined(fn_name->content);
 
@@ -592,7 +597,7 @@ FunctionCall::FunctionCall(GeneralInfo *scope_id, Vector *fnname_parameters) : V
         {
             auto expr = (Expression *)(*it);
             if (!expr)
-                notify("expr is nullptr\n");
+                semantic_error("expr is nullptr\n");
 
             args->push_back(expr->eval());
         }
@@ -608,7 +613,7 @@ void ArrayIndexing::add_index(Expression *rval)
     }
     else
     {
-        notify("expression resulted in nullptr\n");
+        semantic_error("expression resulted in nullptr\n");
     }
 }
 
@@ -651,7 +656,7 @@ bool ArrayIndexing::check_indexes()
 
     if (!indexes || !array)
     {
-        notify("no indexes or no array\n");
+        semantic_error("no indexes or no array\n");
         return true;
     }
 
@@ -668,20 +673,20 @@ bool ArrayIndexing::check_indexes()
     {
         if (!current_dimension)
         {
-            notify("error converting to arraytype, probably more indexations than array dimensions");
+            semantic_error("error converting to arraytype, probably more indexations than array dimensions");
             return false;
         }
 
         auto index = dynamic_cast<IntValue *>(val);
         if (!index || index->value < 0)
         {
-            notify("index is not usize");
+            semantic_error("index is not usize");
             return false;
         }
 
         if (current_dimension->size <= index->value)
         {
-            notify("index exceeds size of array");
+            semantic_error("index exceeds size of array");
             return false;
         }
 
@@ -690,7 +695,7 @@ bool ArrayIndexing::check_indexes()
     return true;
 }
 
-void Vector::add_pointer(void *ptr)
+void Vector::add_element(void *ptr)
 {
     pointers.push_back(ptr);
 }
@@ -722,7 +727,7 @@ ArrayType::ArrayType(TypeNode *type, ArrayIndexing *arindex) : TypeNode(types::A
         auto iv = dynamic_cast<IntValue *>(vn);
         if (!iv || iv->value < 0)
         {
-            notify("index not a usize ");
+            semantic_error("index not a usize ");
         }
         auto val = iv->value;
 
@@ -748,6 +753,24 @@ ArrayType::~ArrayType()
 ValueNode *ArrayType::get_associated_value()
 {
     return new ArrayValue(this);
+}
+
+void ArrayType::copy_to(TypeNode *&other)
+{
+    auto o = (ArrayType *)(other);
+    o = new ArrayType();
+    element_type->copy_to(o->element_type);
+    o->size = size;
+    other = o;
+};
+
+bool ArrayType::is_equal(TypeNode *other)
+{
+    auto ar = dynamic_cast<ArrayType *>(other);
+    if (!ar)
+        return false;
+
+    return (ar->size == this->size) && (element_type->is_equal(ar->element_type));
 }
 
 string ArrayType::to_string()
@@ -792,6 +815,10 @@ void IntType::copy_to(TypeNode *&other)
     o = new IntType();
     o->type = this->type;
     other = o;
+}
+bool IntType::is_equal(TypeNode *other)
+{
+    return dynamic_cast<IntType *>(other) != nullptr;
 };
 
 IntValue::IntValue(string number)
@@ -858,9 +885,20 @@ ValueNode *IntValue::at(ArrayIndexing *ai, int start_index)
     printf("not an array\n");
     return nullptr;
 }
+AssignResult IntValue::assign(ValueNode *val)
+{
+    auto convert = dynamic_cast<IntValue *>(val);
+
+    if (!convert)
+        return AssignResult::DIFTYPE;
+
+    this->value = convert->value;
+
+    return AssignResult::OK;
+}
 void IntValue::print()
 {
-    printf("Integer with value = %d\n", value);
+    printf("int(%d)\n", value);
 }
 
 string IntValue::to_string()
@@ -902,8 +940,17 @@ ClassType::ClassType(GeneralInfo *id) : TypeNode(types::USER_TYPE)
 
     if (!clas)
     {
-        notify("%s isn't a class type", id->content.c_str());
+        semantic_error("%s isn't a class type", id->content.c_str());
     }
+}
+
+bool ClassType::is_equal(TypeNode *other)
+{
+    auto cl = dynamic_cast<ClassType *>(other);
+    if (!other)
+        return false;
+
+    return clas == cl->clas;
 }
 
 string ClassType::to_string()
@@ -930,6 +977,10 @@ ArrayValue::ArrayValue(ArrayType *at)
     }
 }
 
+ArrayValue::ArrayValue()
+{
+}
+
 string ArrayValue::to_string()
 {
     string temp = "[";
@@ -941,6 +992,88 @@ string ArrayValue::to_string()
     }
     temp.erase(temp.size() - 1);
     return temp + "]";
+}
+
+void ArrayValue::copy_to(ValueNode *&other)
+{
+    auto o = (ArrayValue *)(other);
+    o = new ArrayValue();
+    o->type = this->type;
+    o->elements = this->elements;
+    other = o;
+};
+
+ArrayValue::ArrayValue(Vector *init)
+{
+    if (!init)
+        return;
+
+    for (auto &el : init->pointers)
+    {
+        if (!el)
+            return;
+        auto expr = (Expression *)(el);
+
+        printf("here1");
+        auto val = expr->eval();
+
+        if (!val)
+            return;
+
+        if (!add_element(val))
+            return;
+    }
+
+    auto at = new ArrayType();
+    int size = elements.size();
+    at->size = size;
+    if (size)
+        elements.at(0)->type->copy_to(at->element_type);
+    this->type = at;
+}
+
+bool ArrayValue::add_element(ValueNode *val)
+{
+    if (elements.size() > 0)
+    {
+        if (!elements.at(0)->type)
+        {
+            printf("elements.at(0)->type is nulltpr\n");
+        }
+        if (!elements.at(0)->type->is_equal(val->type))
+        {
+            semantic_error("cannot push %s to vec of type %s", val->type->to_string().c_str(), type->to_string().c_str());
+            return false;
+        }
+    }
+    elements.push_back(val);
+    return true;
+}
+
+bool ArrayValue::mul(ValueNode *other)
+{
+    semantic_error("%s * %s is an unsupported binary opration", type->to_string().c_str(), other->type->to_string().c_str());
+    return false;
+}
+
+AssignResult ArrayValue::assign(ValueNode *val)
+{
+    auto ar = dynamic_cast<ArrayValue *>(val);
+    if (!ar)
+        return AssignResult::DIFTYPE;
+
+    if (ar->elements.size() != elements.size())
+        return AssignResult::DIFTYPE;
+
+    AssignResult res;
+
+    for (size_t it = 0; it < elements.size(); it++)
+    {
+        res = elements.at(it)->assign(ar->elements.at(it));
+        if (res != AssignResult::OK)
+            return res;
+    }
+    return AssignResult::OK;
 }
 
 ValueNode *ArrayValue::at(ArrayIndexing *ai, int start_index)
