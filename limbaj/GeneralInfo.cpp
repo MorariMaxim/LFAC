@@ -2,10 +2,60 @@
 #include <stdio.h>
 #include <format>
 using namespace std;
+Span::Span()
+{
+    start.col = gCol;
+    start.row = gRow;
+}
 
-static int debug_count = 0;
+void Span::set_span(Span *other)
+{
+    start = other->start;
+    end = other->end;
+}
 
-#define unequal_types_error(t1, t2) semantic_error("different types: %s vs %s", t1->to_string().c_str(), t1->to_string().c_str())
+void Span::set_span_start(Span *other)
+{
+    start = other->start;
+}
+
+void Span::set_span_end(Span *other)
+{
+    end = other->end;
+}
+
+void Span::span_end()
+{
+    end.col = gCol;
+    end.row = gRow;
+
+    cout << span_to_string( ) <<endl;
+}
+
+void Span::set_lines(Span *r1, Span *r2)
+{
+    start.row = r1->start.row;
+    start.col = 1;
+    end.row = r2->start.row;
+    end.col = 1;
+}
+
+string Span::span_to_string()
+{
+    char buffer[100] = "";
+    sprintf(buffer, "%u:%u", start.row, start.col);
+    if (end.row != 0)
+        sprintf(buffer + strlen(buffer), "-%u:%u", end.row, end.col);
+
+    return buffer;
+}
+
+Span::~Span()
+{
+}
+int debug_count = 0;
+
+#define unequal_types_error(t1, t2) semantic_error("different types.. %s vs %s", t1->to_string().c_str(), t2->to_string().c_str())
 void debug_print(string s)
 {
     int debug = 1;
@@ -62,34 +112,25 @@ TypeNode::~TypeNode()
     string s = "1";
 }
 
-GeneralInfo::GeneralInfo(string str, int row_, int col_)
-{
-    this->row = row_;
-    this->col = col_;
-    content = str;
-    if (debug)
-        printf("constructing GeneralInfo (%s) at (%d,%d)\n", content.c_str(), row, col);
-}
-
-GeneralInfo::GeneralInfo()
+RawNode::RawNode()
 {
     content = "";
 }
 
-GeneralInfo::GeneralInfo(string s)
+RawNode::RawNode(string s)
 {
     content = s;
 }
 
-void GeneralInfo::print()
+void RawNode::print()
 {
     printf("%s", content.c_str());
 }
 
-GeneralInfo::~GeneralInfo()
+RawNode::~RawNode()
 {
     if (debug)
-        printf("destructing  GeneralInfo (%s)\n", content.c_str());
+        printf("destructing  RawNode (%s)\n", content.c_str());
 }
 string col_2_ansi(Colours col)
 {
@@ -189,7 +230,7 @@ ValueNode *Expression::eval_binary_operator()
     }
     if (!t1->type->is_equal(t2->type))
     {
-        semantic_error("different types: %s vs %s", t1->type->to_string().c_str(), t2->type->to_string().c_str());
+        semantic_error("different types: at (%s) %s vs at (%s) %s", left->span_to_string().c_str(), t1->type->to_string().c_str(), right->span_to_string().c_str(),t2->type->to_string().c_str());
         return nullptr;
     }
     switch (oper)
@@ -286,7 +327,7 @@ ValueNode *Expression::eval()
         auto temp2 = get_leaf_value();
         if (!temp2)
         {
-            printf("value of %s is unitialized!", get_leaf_id().c_str());
+            semantic_error("value of %s is unitialized!", get_leaf_id().c_str());
             return nullptr;
         }
         temp2->copy_to(temp1);
@@ -304,8 +345,10 @@ ValueNode *Expression::eval()
     return nullptr;
 }
 
-Expression::Expression(OperTypes op, Expression *left, Expression *right) : GeneralInfo("", -1, -1)
-{
+Expression::Expression(OperTypes op, Expression *left, Expression *right)
+{    
+    set_span_start(left);
+    set_span_end(right);
     this->oper = op;
     this->left = left;
     this->right = right;
@@ -319,6 +362,7 @@ Expression::Expression(ValueNode *vn)
         debug_print("vn is nullptr");
         return;
     }
+    set_span(vn);
     oper = OperTypes::NONOPERATOR;
     symbol_type = false;
     temp = new TempSymbol();
@@ -327,26 +371,32 @@ Expression::Expression(ValueNode *vn)
 }
 Expression::Expression(Symbol *sym)
 {
-
     if (!sym)
     {
         printf("error during run time, being passed a nullptr symbol");
+
+        return;
     }
     symbol_type = true;
     this->sym = sym;
     oper = OperTypes::NONOPERATOR;
+    debug_print("before spanned");
+    if(sym->span)
+        set_span(sym->span);
+    debug_print("spanned");
 }
 
-Expression::Expression(string cont) : GeneralInfo(cont, -1, -1)
-{
-    sym = currentSymbolTable->is_symbol_defined_in_path(cont);
+Expression::Expression(RawNode *id)
+{ 
+    sym = currentSymbolTable->is_symbol_defined_in_path(id->content);
     oper = OperTypes::NONOPERATOR;
     symbol_type = true;
-
+    
     if (!sym)
     {
-        semantic_error("%s not declared\n", cont.c_str());
+        semantic_error("%s not declared\n", id->content.c_str());
     }
+    set_span(id);
 }
 
 Expression::~Expression()
@@ -410,7 +460,7 @@ ValueNode *Expression::get_leaf_value()
 
     return nullptr;
 }
-FunctionDetails::FunctionDetails(string name, TypeNode *ret_type, Vector *pars) : GeneralInfo("", -1, -1)
+FunctionDetails::FunctionDetails(string name, TypeNode *ret_type, Vector *pars) : RawNode("")
 {
     printf("func name = %s\n", name.c_str());
     parameters = new vector<Symbol *>();
@@ -461,13 +511,22 @@ Symbol *FunctionDetails::hasParemeter(string name)
     return nullptr;
 }
 
-void FunctionDetails::set_gReturnType()
+void FunctionDetails::check_return_type()
 {
-    if (gReturnType)
+    if (!gReturnExpr)
     {
+        if (return_type->type == types::VOID)
+            return;
+        semantic_error("at line %d.. expected a return value as return type is not void", start.row);
+        return;
+    }
 
-        delete return_type;
-        return_type = gReturnType;
+    auto val = gReturnExpr->eval();
+    auto type = val->type;
+
+    if (!Expression::are_types_equal(type, return_type))
+    {
+        semantic_error("at line %d..mismatchd return types: %s vs %s", gTempSpan.start.row, type->to_string().c_str(), return_type->to_string().c_str());
     }
 }
 
@@ -495,7 +554,7 @@ void FunctionDetails::setSignature()
         temp.erase(temp.size() - 2, 2);
     }
     temp += ") -> ";
-    temp += getTypeAsStr(this->return_type->type);
+    temp += types_2_str(this->return_type->type);
     signature = temp;
     // printf("%s\n", signature.c_str());
 }
@@ -527,14 +586,14 @@ bool FunctionCall::checkCall()
         }
         if (!Expression::are_types_equal((*args)[i]->type, (*parameters)[i]->type))
         {
-            printf("args[%d].type (%s) != pars[%d].type (%s)\n", i, getTypeAsStr((*args)[i]->type->type).c_str(), i, getTypeAsStr((*parameters)[i]->type->type).c_str());
+            printf("args[%d].type (%s) != pars[%d].type (%s)\n", i, types_2_str((*args)[i]->type->type).c_str(), i, types_2_str((*parameters)[i]->type->type).c_str());
             return false;
         }
     }
     return true;
 }
 
-FunctionCall::FunctionCall(GeneralInfo *scope_id, Vector *fnname_parameters) : ValueNode()
+FunctionCall::FunctionCall(RawNode *scope_id, Vector *fnname_parameters) : ValueNode()
 {
     SymbolTable *scope = currentSymbolTable;
 
@@ -565,7 +624,7 @@ FunctionCall::FunctionCall(GeneralInfo *scope_id, Vector *fnname_parameters) : V
         return;
     }
 
-    GeneralInfo *fn_name = (GeneralInfo *)(fnname_parameters->pointers[0]);
+    RawNode *fn_name = (RawNode *)(fnname_parameters->pointers[0]);
 
     if (!fn_name)
         semantic_error("funcname is nullptr\n");
@@ -617,14 +676,14 @@ void ArrayIndexing::add_index(Expression *rval)
     }
 }
 
-#define checkSymbol(x)                                                                        \
-    {                                                                                         \
-        if (currentSymbolTable->is_symbol_defined_in_path(x->content) == nullptr)             \
-            printf("\nsymbol not defined %s at %d:%d\n", x->content.c_str(), x->row, x->col); \
+#define checkSymbol(x)                                                            \
+    {                                                                             \
+        if (currentSymbolTable->is_symbol_defined_in_path(x->content) == nullptr) \
+            printf("\nsymbol not defined %s\n", x->content.c_str());              \
     }
 #define getSymbol(x) currentSymbolTable->is_symbol_defined_in_path(x->content)
 
-ArrayIndexing::ArrayIndexing(GeneralInfo *arr)
+ArrayIndexing::ArrayIndexing(RawNode *arr)
 {
     checkSymbol(arr);
     auto sym = getSymbol(arr);
@@ -825,6 +884,7 @@ IntValue::IntValue(string number)
 {
     type = new IntType();
     value = atoi(number.c_str());
+    printf("new int with value = %d\n", value);
 }
 
 bool IntValue::add(ValueNode *other)
@@ -906,6 +966,489 @@ string IntValue::to_string()
     return std::to_string(value);
 }
 
+// FLOAT IMPLEMENTATION
+
+FloatType::FloatType() : TypeNode(FLOAT)
+{
+    type = FLOAT;
+}
+
+string FloatType::to_string()
+{
+    return "float";
+}
+
+ValueNode *FloatType::get_associated_value()
+{
+    return new FloatValue("0");
+}
+
+void FloatType::copy_to(TypeNode *&other)
+{
+    auto o = (FloatType *)(other);
+    o = new FloatType();
+    o->type = this->type;
+    other = o;
+}
+bool FloatType::is_equal(TypeNode *other)
+{
+    return dynamic_cast<FloatType *>(other) != nullptr;
+};
+
+FloatValue::FloatValue(string number)
+{
+    type = new FloatType();
+    value = atof(number.c_str());
+    printf("new float with value = %f\n", value);
+}
+
+bool FloatValue::add(ValueNode *other)
+{
+    auto t2 = dynamic_cast<FloatValue *>(other);
+    this->value += t2->value;
+    return true;
+}
+
+bool FloatValue::mul(ValueNode *other)
+{
+    auto t2 = dynamic_cast<FloatValue *>(other);
+    this->value *= t2->value;
+    return true;
+}
+
+bool FloatValue::div(ValueNode *other)
+{
+    auto t2 = dynamic_cast<FloatValue *>(other);
+    if (t2->value != 0)
+    {
+        this->value /= t2->value;
+    }
+
+    return true;
+}
+bool FloatValue::sub(ValueNode *other)
+{
+    auto t2 = dynamic_cast<FloatValue *>(other);
+    this->value -= t2->value;
+    return true;
+}
+bool FloatValue::neg()
+{
+    value *= -1;
+    return false;
+}
+bool FloatValue::lnot()
+{
+    value *= -1;
+    return false;
+}
+void FloatValue::copy_to(ValueNode *&other)
+{
+    auto o = (FloatValue *)(other);
+    o = new FloatValue("0");
+    o->value = this->value;
+    other = o;
+}
+ValueNode *FloatValue::at(ArrayIndexing *ai, int start_index)
+{
+    if (!ai)
+        return nullptr;
+    int indx_size = ai->indexes->size();
+    if (indx_size == start_index)
+        return this;
+
+    printf("not an array\n");
+    return nullptr;
+}
+AssignResult FloatValue::assign(ValueNode *val)
+{
+    auto convert = dynamic_cast<FloatValue *>(val);
+
+    if (!convert)
+        return AssignResult::DIFTYPE;
+
+    this->value = convert->value;
+
+    return AssignResult::OK;
+}
+void FloatValue::print()
+{
+    printf("float(%f)\n", value);
+}
+
+string FloatValue::to_string()
+{
+    return std::to_string(value);
+}
+
+// BOOL IMPLEMENTATION
+
+BoolType::BoolType() : TypeNode(BOOL)
+{
+    type = BOOL;
+}
+
+string BoolType::to_string()
+{
+    return "bool";
+}
+
+ValueNode *BoolType::get_associated_value()
+{
+    return new BoolValue("false");
+}
+
+void BoolType::copy_to(TypeNode *&other)
+{
+    auto o = (BoolType *)(other);
+    o = new BoolType();
+    o->type = this->type;
+    other = o;
+}
+bool BoolType::is_equal(TypeNode *other)
+{
+    return dynamic_cast<BoolType *>(other) != nullptr;
+};
+
+BoolValue::BoolValue(string number)
+{
+    type = new BoolType();
+    value = (number == "true") ? true : false;
+
+    printf("new bool with value = %s\n", value ? "true" : "false");
+}
+
+bool BoolValue::add(ValueNode *other)
+{
+    auto t2 = dynamic_cast<BoolValue *>(other);
+    this->value += t2->value;
+    return true;
+}
+
+bool BoolValue::mul(ValueNode *other)
+{
+    auto t2 = dynamic_cast<BoolValue *>(other);
+    this->value &= t2->value;
+    return true;
+}
+
+bool BoolValue::div(ValueNode *other)
+{
+    auto t2 = dynamic_cast<BoolValue *>(other);
+    if (t2->value != 0)
+    {
+        this->value /= t2->value;
+    }
+    return true;
+}
+bool BoolValue::sub(ValueNode *other)
+{
+    auto t2 = dynamic_cast<BoolValue *>(other);
+    this->value -= t2->value;
+    return true;
+}
+bool BoolValue::neg()
+{
+    value = !value;
+    return true;
+}
+bool BoolValue::lnot()
+{
+    value = !value;
+    return true;
+}
+void BoolValue::copy_to(ValueNode *&other)
+{
+    auto o = (BoolValue *)(other);
+    o = new BoolValue("false");
+    o->value = this->value;
+    other = o;
+}
+ValueNode *BoolValue::at(ArrayIndexing *ai, int start_index)
+{
+    if (!ai)
+        return nullptr;
+    int indx_size = ai->indexes->size();
+    if (indx_size == start_index)
+        return this;
+
+    printf("not an array\n");
+    return nullptr;
+}
+AssignResult BoolValue::assign(ValueNode *val)
+{
+    auto convert = dynamic_cast<BoolValue *>(val);
+
+    if (!convert)
+        return AssignResult::DIFTYPE;
+
+    this->value = convert->value;
+
+    return AssignResult::OK;
+}
+void BoolValue::print()
+{
+    printf("bool(%d)\n", value);
+}
+
+string BoolValue::to_string()
+{
+    return value ? "true" : "false";
+}
+
+// STRING IMPLEMENTATION
+
+StringType::StringType() : TypeNode(STRING)
+{
+    type = STRING;
+}
+
+string StringType::to_string()
+{
+    return "string";
+}
+
+ValueNode *StringType::get_associated_value()
+{
+    return new StringValue("");
+}
+
+void StringType::copy_to(TypeNode *&other)
+{
+    auto o = (StringType *)(other);
+    o = new StringType();
+    o->type = this->type;
+    other = o;
+}
+bool StringType::is_equal(TypeNode *other)
+{
+    return dynamic_cast<StringType *>(other) != nullptr;
+};
+
+StringValue::StringValue(string number)
+{
+    type = new StringType();
+    int size = number.size();
+    if (size >= 2 && number[0] == '"' && number[size - 1] == '"')
+        value = number.substr(1, size - 2);
+    else
+        value = number;
+
+    printf("new string with value = %s\n", value.c_str());
+}
+
+bool StringValue::add(ValueNode *other)
+{
+    auto t2 = dynamic_cast<StringValue *>(other);
+    this->value += t2->value;
+    return true;
+}
+
+bool StringValue::mul(ValueNode *other)
+{
+    return dynamic_cast<StringValue *>(other) != nullptr;
+}
+
+bool StringValue::div(ValueNode *other)
+{
+    /*if (t2->value != 0)
+    {
+        this->value /= t2->value;
+    }*/
+    return dynamic_cast<StringValue *>(other) != nullptr;
+}
+bool StringValue::sub(ValueNode *other)
+{
+    return dynamic_cast<StringValue *>(other) != nullptr;
+}
+bool StringValue::neg()
+{
+    // value = !value;
+    return true;
+}
+bool StringValue::lnot()
+{
+    // value = !value;
+    return true;
+}
+void StringValue::copy_to(ValueNode *&other)
+{
+    auto o = (StringValue *)(other);
+    o = new StringValue("");
+    o->value = this->value;
+    other = o;
+}
+ValueNode *StringValue::at(ArrayIndexing *ai, int start_index)
+{
+    if (!ai)
+        return nullptr;
+    int indx_size = ai->indexes->size();
+    if (indx_size == start_index)
+        return this;
+
+    auto convert = dynamic_cast<IntValue *>(ai->indexes->at(start_index));
+
+    if (!convert || convert->value < 0 || indx_size != (start_index + 1) || convert->value >= (int)value.size())
+    {
+        printf("index out of bounds");
+        return nullptr;
+    }
+
+    return new CharValue(value[convert->value]);
+}
+AssignResult StringValue::assign(ValueNode *val)
+{
+    auto convert = dynamic_cast<StringValue *>(val);
+
+    if (!convert)
+        return AssignResult::DIFTYPE;
+
+    debug_print("here!!");
+    int size = convert->value.size();
+    string number = convert->value;
+    if (size >= 2 && number[0] == '"' && number[size - 1] == '"')
+        value = number.substr(1, size - 2);
+    else
+        value = number;
+    
+
+    return AssignResult::OK;
+}
+void StringValue::print()
+{
+    printf("string(%s)\n", value.c_str());
+}
+
+string StringValue::to_string()
+{
+    return value;
+}
+
+// CHAR IMPLEMENTATION
+
+CharType::CharType() : TypeNode(CHAR)
+{
+    type = CHAR;
+}
+
+string CharType::to_string()
+{
+    return "char";
+}
+
+ValueNode *CharType::get_associated_value()
+{
+    return new CharValue(" ");
+}
+
+void CharType::copy_to(TypeNode *&other)
+{
+    auto o = (CharType *)(other);
+    o = new CharType();
+    o->type = this->type;
+    other = o;
+}
+bool CharType::is_equal(TypeNode *other)
+{
+    return dynamic_cast<CharType *>(other) != nullptr;
+};
+
+CharValue::CharValue(string number)
+{
+    type = new CharType();
+    if (number.size() > 0)
+        value = number[0];
+    else
+        value = ' ';
+
+    printf("new char with value = %c\n", value);
+}
+CharValue::CharValue(char character)
+{
+    type = new CharType();
+    value = character;
+    printf("new char with value = %c\n", value);
+}
+bool CharValue::add(ValueNode *other)
+{
+    auto t2 = dynamic_cast<CharValue *>(other);
+    this->value += t2->value;
+    return true;
+}
+
+bool CharValue::mul(ValueNode *other)
+{
+    auto t2 = dynamic_cast<CharValue *>(other);
+    this->value *= t2->value;
+    return true;
+}
+
+bool CharValue::div(ValueNode *other)
+{
+    auto t2 = dynamic_cast<CharValue *>(other);
+    if (t2->value != 0)
+    {
+        this->value /= t2->value;
+    }
+    return true;
+}
+bool CharValue::sub(ValueNode *other)
+{
+    auto t2 = dynamic_cast<CharValue *>(other);
+    this->value -= t2->value;
+    return true;
+}
+bool CharValue::neg()
+{
+    value *= -1;
+    return true;
+}
+bool CharValue::lnot()
+{
+    value *= -1;
+    return true;
+}
+void CharValue::copy_to(ValueNode *&other)
+{
+    auto o = (CharValue *)(other);
+    o = new CharValue("");
+    o->value = this->value;
+    other = o;
+}
+ValueNode *CharValue::at(ArrayIndexing *ai, int start_index)
+{
+    if (!ai)
+        return nullptr;
+    int indx_size = ai->indexes->size();
+    if (indx_size == start_index)
+        return this;
+
+    printf("not an array\n");
+    return nullptr;
+}
+AssignResult CharValue::assign(ValueNode *val)
+{
+    auto convert = dynamic_cast<CharValue *>(val);
+
+    if (!convert)
+        return AssignResult::DIFTYPE;
+
+    this->value = convert->value;
+
+    return AssignResult::OK;
+}
+void CharValue::print()
+{
+    printf("char(%c)\n", value);
+}
+
+string CharValue::to_string()
+{
+    string s = "";
+    s += value;
+    return s;
+}
+
 ClassObject::ClassObject(ClassType *ct)
 {
     type = ct;
@@ -934,7 +1477,7 @@ ClassType::ClassType(SymbolTable *ct) : TypeNode(types::USER_TYPE)
     clas = ct;
 }
 
-ClassType::ClassType(GeneralInfo *id) : TypeNode(types::USER_TYPE)
+ClassType::ClassType(RawNode *id) : TypeNode(types::USER_TYPE)
 {
     clas = currentSymbolTable->isClassDefined(id->content);
 
@@ -1005,6 +1548,10 @@ void ArrayValue::copy_to(ValueNode *&other)
 
 ArrayValue::ArrayValue(Vector *init)
 {
+    auto at = new ArrayType(new TypeNode(types::OTHER));
+    at->size = 0;
+    this->type = at;
+
     if (!init)
         return;
 
@@ -1014,35 +1561,31 @@ ArrayValue::ArrayValue(Vector *init)
             return;
         auto expr = (Expression *)(el);
 
-        printf("here1");
         auto val = expr->eval();
-
         if (!val)
             return;
-
         if (!add_element(val))
             return;
     }
 
-    auto at = new ArrayType();
     int size = elements.size();
     at->size = size;
     if (size)
         elements.at(0)->type->copy_to(at->element_type);
-    this->type = at;
 }
 
 bool ArrayValue::add_element(ValueNode *val)
 {
     if (elements.size() > 0)
     {
-        if (!elements.at(0)->type)
+        if (!elements.at(0)->type || !val || !val->type)
         {
-            printf("elements.at(0)->type is nulltpr\n");
+            debug_print("elements.at(0)->type is nulltpr");
+            return false;
         }
         if (!elements.at(0)->type->is_equal(val->type))
         {
-            semantic_error("cannot push %s to vec of type %s", val->type->to_string().c_str(), type->to_string().c_str());
+            semantic_error("cannot push %s to vector of  %s", val->type->to_string().c_str(), elements.at(0)->type->to_string().c_str());
             return false;
         }
     }

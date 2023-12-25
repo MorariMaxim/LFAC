@@ -1,31 +1,26 @@
-int a[2][3] = [[1,2,3],[1,2,3]] ;
-a = [[1,2,3],[4,5,6]]
-#
+float x = 12.0;
 
+int u = 2;
 
+eval ( ((u + u) + (u*2))  * x ) ;
 
-eval ( b * c );
+# 
 class Person {
 private:
     int a;
     int b;
-
 public:
     fn printFields() -> void {
         
     }
     fn as212cw231() -> void {
         
-    }
-    
+    } 
 private:
     int x;
     int c;
 public:
 }
-temp a ;
-a.b ;
-a.func();
 
 fn func1(int a, int x, float b ) -> int {
     int x;
@@ -33,24 +28,6 @@ fn func1(int a, int x, float b ) -> int {
     func1(a,x,b);
     return x
 }
-int a;
-float b;
-func1(a, a,b);
-int     a = a+b;
-float   e;
-string m;
-
-a + b + c; 
-if (  a+b    ) {
-
-int b;
-int c;
-}
-else {
-
-    int x;
-}
-a = a + b;
 
 class test {
     int a;    
@@ -61,6 +38,5 @@ test x( a : 10);
 int a = 10;
 
 eval ( 1 + 2 * 4 + a);
-
 
 #

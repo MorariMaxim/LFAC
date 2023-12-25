@@ -3,14 +3,6 @@
 
 #define symbol_not_declared(s) printf("variable %s not declared\n", s.c_str());
 
-static int debug_count = 0;
-void print_count2(string s)
-{
-
-    printf("[%d] %s\n", debug_count++, s.c_str());
-    fflush(stdout);
-}
-
 void nullptr_error(string s)
 {
     printf("a pointer was null when unexpected; %s\n", s.c_str());
@@ -43,7 +35,7 @@ void printType(types type)
         break;
     }
 }
-string getTypeAsStr(types type)
+string types_2_str(types type)
 {
     switch (type)
     {
@@ -142,9 +134,16 @@ AssignResult Symbol::assign(ValueNode *val)
     if (is_const)
         return AssignResult::ISCONST;
 
+    debug_print("here!\n");
     if (!value)
+    {
+        debug_print("!value\n");
         value = type->get_associated_value();
-    return this->value->assign(val);
+    }
+
+    auto res = this->value->assign(val);
+    debug_print("got res");
+    return res;
 }
 
 AssignResult Symbol::assign(ArrayIndexing *indexing, ValueNode *val)
@@ -158,6 +157,12 @@ AssignResult Symbol::assign(ArrayIndexing *indexing, ValueNode *val)
     auto el = value->at(indexing, 0);
 
     return el->assign(val);
+}
+
+void Symbol::set_span(Span *other)
+{
+    span = new Span();
+    span->set_span(other);
 }
 
 SymbolTable::SymbolTable(string name) : name(name)
@@ -228,21 +233,15 @@ Symbol *SymbolTable::is_symbol_defined_in_path(string name)
 
     return nullptr;
 }
-int SymbolTable::define_symbol(TypeNode *tn, string name, Expression *value)
+int SymbolTable::declare_symbol(TypeNode *tn, RawNode *id, Expression *value)
 {
-    printf("assigning to %s\n", name.c_str());
+    string name = id->content; 
+
     if (!tn)
     {
         nullptr_error(" type node was nullptr");
         return 0;
-    }
-    auto it = symbols.find(name);
-
-    if (it != symbols.end())
-    {
-        semantic_error("symbol %s already exists", name.c_str());
-        return false;
-    }
+    } 
 
     Symbol *symbol = new Symbol();
 
@@ -252,7 +251,7 @@ int SymbolTable::define_symbol(TypeNode *tn, string name, Expression *value)
 
         if (!res || !Expression::are_types_equal(tn, res->type))
         {
-            semantic_error("disonance between type value and initialization value\n");
+            semantic_error("mismatch between variable type and initialization value type\n");
             return false;
         }
         printf("assigning %s to %s\n", res->to_string().c_str(), name.c_str());
@@ -262,17 +261,21 @@ int SymbolTable::define_symbol(TypeNode *tn, string name, Expression *value)
     }
     else
     {
+        if(tn->is_const) {
+            spanned_semantic_error(id,"every constant must be initialized!");
+            return false;
+        }
         symbol->type = tn;
         symbol->is_init = false;
+
+
     }
 
     symbol->is_const = tn->is_const;
     symbol->name = name;
+    symbol->set_span(id); 
 
-    symbols.emplace(symbol->name, symbol);
-
-    symbol->print();
-    return true;
+    return insert_symbol(symbol);
 }
 
 SymbolTable *SymbolTable::isClassDefined(string name)
@@ -299,15 +302,23 @@ SymbolTable *SymbolTable::getParent()
     return parent;
 }
 
-SymbolTable *SymbolTable::add_class(GeneralInfo *gn)
+SymbolTable *SymbolTable::add_class(RawNode *gn)
 {
     SymbolTable *newClassSope = new SymbolTable(gn->content);
+    newClassSope->set_span(gn);
     newClassSope->type = CLASS_SCOPE;
     newClassSope->parent = this;
     auto res = classes.emplace(newClassSope->name, newClassSope);
     if (!res.second)
     {
-        semantic_error("class %s already declared ", newClassSope->name.c_str());
+        if ((*res.first).second->span)
+        {
+            spanned_semantic_error(gn, "class %s already declared here %s", newClassSope->name.c_str(), (*res.first).second->span->span_to_string().c_str());
+        }
+        else
+        {
+            spanned_semantic_error(gn, "class %s already declared", newClassSope->name.c_str());
+        }
         return nullptr;
     }
     return newClassSope;
@@ -323,9 +334,11 @@ SymbolTable *SymbolTable::addScope(string name)
     return newScope;
 }
 
-Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbolName)
+Symbol *SymbolTable::declare_user_symbol(RawNode *classId, RawNode *symbolName)
 {
     auto cl = isClassDefined(classId->content);
+
+    debug_print("clas defiend");
     if (!cl)
     {
         printf("%s isn't a user defined type\n", classId->content.c_str());
@@ -340,18 +353,19 @@ Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbo
     Symbol *sym = new Symbol();
     auto ct = new ClassType(cl);
     sym->type = ct;
-    sym->value = new ClassObject(ct);
     sym->name = symbolName->content; // to do, is_const;
     sym->is_init = false;
+    sym->set_span(symbolName);
+    insert_symbol(sym);
 
-    symbols.emplace(sym->name, sym);
     return sym;
 }
 
-Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbolName, Vector *init)
+Symbol *SymbolTable::declare_user_symbol(RawNode *classId, RawNode *symbolName, Vector *init)
 {
-    Symbol *sym = define_user_symbol(classId, symbolName);
+    Symbol *sym = declare_user_symbol(classId, symbolName);
 
+    debug_print("declared us\n");
     if (!init)
         return sym;
 
@@ -380,7 +394,7 @@ Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbo
 
     for (int i = 0; i < size / 2; i++)
     {
-        auto id = (GeneralInfo *)(init->pointers[i * 2]);
+        auto id = (RawNode *)(init->pointers[i * 2]);
         auto expr = (Expression *)(init->pointers[i * 2 + 1]);
 
         auto field = fields->find(id->content);
@@ -418,7 +432,7 @@ Symbol *SymbolTable::define_user_symbol(GeneralInfo *classId, GeneralInfo *symbo
     return sym;
 }
 
-Symbol *SymbolTable::is_user_symbol_defined(GeneralInfo *id)
+Symbol *SymbolTable::is_user_symbol_defined(RawNode *id)
 {
     auto sym = is_symbol_defined_in_path(id->content);
 
@@ -445,14 +459,23 @@ void SymbolTable::setAsFunction(FunctionDetails *funcNode)
 
 bool SymbolTable::insert_symbol(Symbol *sym)
 {
-
     auto res = symbols.emplace(sym->name, sym);
 
     if (!res.second)
     {
-        semantic_error("symbol %s already exists", sym->name.c_str());
+        if ((*res.first).second->span)
+        {
+            spanned_semantic_error(sym->span, "symbol %s already declared here %s", sym->name.c_str(), (*res.first).second->span->span_to_string().c_str());
+        }
+        else
+        {
+            spanned_semantic_error(sym->span, "symbol %s already declared", sym->name.c_str());
+        }
+
         return false;
     }
+
+    printf("at %s... inserted %s\n", sym->span->span_to_string().c_str(),sym->name.c_str());
     return true;
 }
 
@@ -462,13 +485,20 @@ bool SymbolTable::insert_symbol(SymbolTable *st)
 
     if (!res.second)
     {
-        semantic_error("scope %s already exists", st->name.c_str());
+        if ((*res.first).second->span)
+        {
+            spanned_semantic_error(st->span, "scope %s already declared at %s", st->name.c_str(), (*res.first).second->span->span_to_string().c_str());
+        }
+        else
+        {
+            spanned_semantic_error(st->span, "scope %s already declared ", st->name.c_str());
+        }
         return false;
     }
     return true;
 }
 
-ValueNode *SymbolTable::symbol_indexing(GeneralInfo *id, ArrayIndexing *indexing)
+ValueNode *SymbolTable::symbol_indexing(RawNode *id, ArrayIndexing *indexing)
 {
     auto sym = is_symbol_defined_in_path(id->content);
 
@@ -481,16 +511,21 @@ ValueNode *SymbolTable::symbol_indexing(GeneralInfo *id, ArrayIndexing *indexing
     return sym->at(indexing);
 }
 
-bool SymbolTable::assign(GeneralInfo *id, Expression *expr, ArrayIndexing *indexing)
+bool SymbolTable::assign(RawNode *id, Expression *expr, ArrayIndexing *indexing)
 {
     auto sym = is_symbol_defined_in_path(id->content);
 
     if (!sym)
     {
-        symbol_not_declared(id->content);
+        spanned_semantic_error(id,"symbol %s not declared",id->content.c_str());
         return false;
     }
 
+    return assign(sym, expr, indexing);
+}
+
+bool SymbolTable::assign(Symbol *sym, Expression *expr, ArrayIndexing *indexing)
+{
     auto val = expr->eval();
 
     if (!val)
@@ -505,11 +540,6 @@ bool SymbolTable::assign(GeneralInfo *id, Expression *expr, ArrayIndexing *index
         res = sym->assign(indexing, val);
 
     return check_assign_result(res, sym, val);
-}
-
-bool SymbolTable::assign(GeneralInfo *id, GeneralInfo *member, Expression *val)
-{
-    return false;
 }
 
 bool SymbolTable::check_assign_result(AssignResult res, Symbol *id, ValueNode *rval)
@@ -535,6 +565,13 @@ bool SymbolTable::check_assign_result(AssignResult res, Symbol *id, ValueNode *r
         break;
     }
 }
+
+void SymbolTable::set_span(Span *other)
+{
+    span = new Span();
+    span->set_span(other);
+}
+
 
 FunctionDetails *SymbolTable::isFuncDefined(string name)
 {
@@ -566,54 +603,55 @@ SymbolTable *SymbolTable::addFunction(FunctionDetails *newFunc)
     if (debug)
         printf("trying to insert %s\n", newFunc->name.c_str());
 
-    functions.emplace(newScope->name, newScope);
+    auto res = functions.emplace(newScope->name, newScope);
+
+    if (!res.second)
+    {
+        if ((*res.first).second->span)
+        {
+            spanned_semantic_error(newScope->span, "function '%s' already declared at %s", newScope->name.c_str(), (*res.first).second->span->span_to_string().c_str());
+        }
+        else
+        {
+            spanned_semantic_error(newScope->span, "function '%s' already declared", newScope->name.c_str());
+        }
+        return nullptr;
+    }
 
     newScope->setAsFunction(newFunc);
     newFunc->setSignature();
 
     return newScope;
 }
-
-SymbolTable *SymbolTable::addFunction(string name)
+ 
+Symbol *SymbolTable::declare_array_symbol(RawNode *id, TypeNode *type, ArrayIndexing *indexing, Expression *init)
 {
-    return nullptr;
-}
-
-int SymbolTable::define_symbol(Symbol *symbol)
-{
-    if (!insert_symbol(symbol))
-        return false;
-
-    return true;
-}
-
-Symbol *SymbolTable::define_array_symbol(string name, TypeNode *type, ArrayIndexing *indexing, Expression *init)
-{
+    string name = id->content;
     auto at = new ArrayType(type, indexing);
     Symbol *sym = new Symbol();
+    sym->set_span(id);
     sym->name = name;
     sym->type = at;
     sym->is_const = type->is_const;
-    sym->value = new ArrayValue(at);
 
     if (init)
     {
         auto val = init->eval();
         if (val)
-            sym->value->assign(val);
+        {
+            if (val->type->is_equal(sym->type))
+            {
+                sym->value = val;
+            }
+            else
+            {
+                semantic_error("cannot initialize %s with %s, dif types (%s vs %s)\n", name.c_str(), val->to_string().c_str(), sym->type->to_string().c_str(), val->type->to_string().c_str());
+            }
+        }
     }
 
     insert_symbol(sym);
     return sym;
-}
-
-int SymbolTable::define_symbol(string name_, Symbol *symbol)
-{
-    symbol->name = name_;
-
-    if (!insert_symbol(symbol))
-        return false;
-    return true;
 }
 
 Symbol *SymbolTable::isLocallyDefined(string name)
@@ -626,16 +664,26 @@ Symbol *SymbolTable::isLocallyDefined(string name)
     return nullptr;
 }
 
-Symbol *SymbolTable::check_member_access(GeneralInfo *id, GeneralInfo *member_id)
+Symbol *SymbolTable::check_member_access(RawNode *id, RawNode *member_id)
 {
     Symbol *sym = is_user_symbol_defined(id);
+
     if (!sym)
         return nullptr;
+
+    sym->span = new Span();
+    sym->span->set_span_start(id);
+    sym->span->set_span_end(member_id);
+    if (!sym->value)
+    {
+        spanned_semantic_error(id, "%s is uninitialized", id->content.c_str());
+        return nullptr;
+    }
     auto value = dynamic_cast<ClassObject *>(sym->value);
 
     if (!value)
     {
-        printf("error at dynamic cast\n");
+        semantic_error("%s is not an object", id->content.c_str());
         return nullptr;
     }
 

@@ -68,10 +68,18 @@ extern int yydebug;
     RETURN = 269,                  /* RETURN  */
     CLASS = 270,                   /* CLASS  */
     EVAL = 271,                    /* EVAL  */
-    INT_TYPE = 272,                /* INT_TYPE  */
-    INT_NR = 273,                  /* INT_NR  */
-    BTYPE = 274,                   /* BTYPE  */
-    UMINUS = 275                   /* UMINUS  */
+    BTYPE = 272,                   /* BTYPE  */
+    FLOAT_TYPE = 273,              /* FLOAT_TYPE  */
+    INT_TYPE = 274,                /* INT_TYPE  */
+    BOOL_TYPE = 275,               /* BOOL_TYPE  */
+    STRING_TYPE = 276,             /* STRING_TYPE  */
+    CHAR_TYPE = 277,               /* CHAR_TYPE  */
+    INTVAL = 278,                  /* INTVAL  */
+    FLOATVAL = 279,                /* FLOATVAL  */
+    BOOLVAL = 280,                 /* BOOLVAL  */
+    STRINGVAL = 281,               /* STRINGVAL  */
+    CHARVAL = 282,                 /* CHARVAL  */
+    UMINUS = 283                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -80,9 +88,10 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 56 "limbaj.y"
+#line 39 "limbaj.y"
 
-    class GeneralInfo* node; 
+    class Span * spanned;    
+    class RawNode* node; 
     class TypeNode* TypeNode;
     class Expression* exprnode;
     class Symbol * symbol_node;
@@ -94,10 +103,11 @@ union YYSTYPE
     class Vector* container;
     class IntType * int_type;
     class IntValue * int_value;
+    class FloatValue * float_value;
     class ValueNode * value_node;
     class ArrayValue * array_value_node; 
 
-#line 101 "limbaj.tab.h"
+#line 111 "limbaj.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

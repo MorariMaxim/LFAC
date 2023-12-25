@@ -1,10 +1,4 @@
-
-
-
 basic types: bool, char, float, string
-
-still to work on types
-are_types_equal : array comparison 
 
 check
 // have to provide detailed info about these errors, must use row and col from general node, and properly initialize it
@@ -15,12 +9,19 @@ check
 
 to complete the functionalities of expression
 
+structure the program in 4 sections
+
+
+class types are not general types, 
+
+
+done 
 arrays:
 - a[1][2] = expr;
 - eval ( a[1][2] + 3)
 
-
-structure the program in 4 sections
-
-
 should use semantic_error for sending messages about errors in the program (symbol declared twice)
+
+
+still to work on types
+are_types_equal : array comparison 

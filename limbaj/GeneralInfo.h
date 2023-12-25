@@ -12,23 +12,46 @@ public:
     void add_element(void *ptr);
 };
 
-
 void print_reduction(string str);
 void print_token(string str, Colours color = Colours::DEFAULTCOL);
-class GeneralInfo
+
+using u32 = unsigned int;
+
+struct Position
+{
+    u32 row = 0, col = 0;
+};
+
+class Span
 {
 public:
-    int row, col;
+    Position start, end;
+
+    Span(); 
+
+    void set_span(Span *other);
+    void set_span_start(Span *other);
+    void set_span_end(Span *other);
+    void span_end();
+    void set_lines(Span * r1, Span * r2);
+    string span_to_string();
+
+    virtual ~Span();
+
+};
+
+class RawNode : public Span
+{
+public:
     string content;
-    GeneralInfo();
-    GeneralInfo(string s);
-    GeneralInfo(string str, int row, int col);
+    RawNode();
+    RawNode(string s);
     void print();
-    virtual ~GeneralInfo();
+    virtual ~RawNode();
 };
 class ValueNode;
 
-class FunctionDetails : public GeneralInfo
+class FunctionDetails : public RawNode
 {
 public:
     string name;
@@ -38,9 +61,15 @@ public:
     FunctionDetails(string name, TypeNode *ret_type, Vector *pars);
     ~FunctionDetails();
     Symbol *hasParemeter(string name);
-    void set_gReturnType();
+    void check_return_type();
     void print_parameters();
     void setSignature();
+
+    operator Span*() {
+        return span;
+    }
+
+    Span * span = new Span();
 };
 
 enum OperTypes
@@ -54,7 +83,7 @@ enum OperTypes
     LNOT
 };
 class TypeNode;
-class ValueNode
+class ValueNode : public Span
 {
 public:
     TypeNode *type;
@@ -71,7 +100,11 @@ public:
 
     virtual void print() { cout << this->to_string() << endl; };
 
-    virtual string to_string() { return "ValueNode"; };
+    virtual string to_string()
+    {
+        semantic_error("uninitialized variable");
+        return "";
+    };
 
     virtual void copy_to(ValueNode *&other)
     {
@@ -107,6 +140,94 @@ public:
 
     AssignResult assign(ValueNode *val) override;
 };
+class FloatValue : public ValueNode
+{
+public:
+    float value;
+    FloatValue(string number);
+    virtual bool add(ValueNode *other) override;
+    virtual bool sub(ValueNode *other) override;
+    virtual bool mul(ValueNode *other) override;
+    virtual bool div(ValueNode *other) override;
+
+    virtual bool neg() override;
+    virtual bool lnot() override;
+
+    void print() override;
+    string to_string() override;
+
+    virtual void copy_to(ValueNode *&other) override;
+    virtual ValueNode *at(ArrayIndexing *arindex, int start_index) override;
+
+    AssignResult assign(ValueNode *val) override;
+};
+
+class BoolValue : public ValueNode
+{
+public:
+    bool value;
+    BoolValue(string Wahrheit);
+    virtual bool add(ValueNode *other) override;
+    virtual bool sub(ValueNode *other) override;
+    virtual bool mul(ValueNode *other) override;
+    virtual bool div(ValueNode *other) override;
+
+    virtual bool neg() override;
+    virtual bool lnot() override;
+
+    void print() override;
+    string to_string() override;
+
+    virtual void copy_to(ValueNode *&other) override;
+    virtual ValueNode *at(ArrayIndexing *arindex, int start_index) override;
+
+    AssignResult assign(ValueNode *val) override;
+};
+
+class StringValue : public ValueNode
+{
+public:
+    string value;
+    StringValue(string strlit);
+    virtual bool add(ValueNode *other) override;
+    virtual bool sub(ValueNode *other) override;
+    virtual bool mul(ValueNode *other) override;
+    virtual bool div(ValueNode *other) override;
+
+    virtual bool neg() override;
+    virtual bool lnot() override;
+
+    void print() override;
+    string to_string() override;
+
+    virtual void copy_to(ValueNode *&other) override;
+    virtual ValueNode *at(ArrayIndexing *arindex, int start_index) override;
+
+    AssignResult assign(ValueNode *val) override;
+};
+
+class CharValue : public ValueNode
+{
+public:
+    char value;
+    CharValue(string character);
+    CharValue(char character);
+    virtual bool add(ValueNode *other) override;
+    virtual bool sub(ValueNode *other) override;
+    virtual bool mul(ValueNode *other) override;
+    virtual bool div(ValueNode *other) override;
+
+    virtual bool neg() override;
+    virtual bool lnot() override;
+
+    void print() override;
+    string to_string() override;
+
+    virtual void copy_to(ValueNode *&other) override;
+    virtual ValueNode *at(ArrayIndexing *arindex, int start_index) override;
+
+    AssignResult assign(ValueNode *val) override;
+};
 
 class FunctionCall : public ValueNode
 {
@@ -115,7 +236,7 @@ public:
     vector<ValueNode *> *args;
     ValueNode *value;
     bool checkCall();
-    FunctionCall(GeneralInfo *scope, Vector *rest);
+    FunctionCall(RawNode *scope, Vector *rest);
 
     bool add(ValueNode *other) { return true; };
     bool sub(ValueNode *other) { return true; };
@@ -165,7 +286,7 @@ class ArrayIndexing
 public:
     Symbol *array;
     vector<ValueNode *> *indexes = new vector<ValueNode *>();
-    ArrayIndexing(GeneralInfo *ar);
+    ArrayIndexing(RawNode *ar);
     ArrayIndexing();
     void add_index(Expression *val);
     bool check_indexes();
@@ -186,7 +307,7 @@ public:
     string to_string() override;
     void copy_to(ValueNode *&other) override;
 };
-class TypeNode : public GeneralInfo
+class TypeNode : public RawNode
 {
 public:
     bool is_const = 0;
@@ -194,7 +315,7 @@ public:
     TypeNode(types t) { type = t; };
     TypeNode(string str);
 
-    virtual string to_string() { return "unspecialized type"; };
+    virtual string to_string() { return types_2_str(type); };
     virtual void copy_to(TypeNode *&other)
     {
         auto o = (TypeNode *)(other);
@@ -207,12 +328,19 @@ public:
     virtual ValueNode *get_associated_value() { return new ValueNode(); };
 
     virtual bool is_equal(TypeNode *other) { return false; };
+    
 };
 
 class FloatType : public TypeNode
 {
 public:
-    FloatType() : TypeNode(FLOAT){};
+    FloatType();
+
+    string to_string() override;
+    ValueNode *get_associated_value() override;
+
+    void copy_to(TypeNode *&other) override;
+    bool is_equal(TypeNode *other) override;
 };
 class IntType : public TypeNode
 {
@@ -228,15 +356,34 @@ public:
 class StringType : public TypeNode
 {
 public:
+    StringType();
+    string to_string() override;
+    ValueNode *get_associated_value() override;
+
+    void copy_to(TypeNode *&other) override;
+    bool is_equal(TypeNode *other) override;
 };
 class BoolType : public TypeNode
 {
 public:
+    BoolType();
+
+    string to_string() override;
+    ValueNode *get_associated_value() override;
+
+    void copy_to(TypeNode *&other) override;
+    bool is_equal(TypeNode *other) override;
 };
 class CharType : public TypeNode
 {
 public:
-    CharType() : TypeNode(FLOAT){};
+    CharType();
+
+    string to_string() override;
+    ValueNode *get_associated_value() override;
+
+    void copy_to(TypeNode *&other) override;
+    bool is_equal(TypeNode *other) override;
 };
 class ArrayType : public TypeNode
 {
@@ -267,7 +414,7 @@ class ClassType : public TypeNode
 public:
     SymbolTable *clas;
     ClassType(SymbolTable *ct);
-    ClassType(GeneralInfo *id);
+    ClassType(RawNode *id);
 
     bool is_equal(TypeNode *other) override;
     string to_string() override;
@@ -278,7 +425,7 @@ struct TempSymbol
     ValueNode *value;
 };
 
-class Expression : public GeneralInfo
+class Expression : public Span
 {
 public:
     Expression *left = nullptr, *right = nullptr;
@@ -293,7 +440,7 @@ public:
     Expression(OperTypes op, Expression *left, Expression *right);
     Expression(ValueNode *vn);
     Expression(Symbol *sym);
-    Expression(string identifier);
+    Expression(RawNode * id);
     virtual ~Expression();
 
     TypeNode *type();
@@ -309,3 +456,4 @@ public:
 };
 
 #endif
+

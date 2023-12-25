@@ -9,58 +9,85 @@ int treat_helper(int type) {
     if(!ignore_after_return_statement){
         switch (type) {
             case RARROW:
-            print_token("->", Colours::CFCOL); col+=yyleng; return RARROW;
+            print_token("->", Colours::CFCOL); gCol+=yyleng; return RARROW;
             break;
             case FN:
-            print_token("fn", Colours::CFCOL);col+=yyleng; return FN;
+            print_token("fn", Colours::CFCOL);gCol+=yyleng; return FN;
             break;
             case CLASS:
-            print_token("class", Colours::TYPECOL);col+=yyleng; return CLASS;
+            print_token("class", Colours::TYPECOL);gCol+=yyleng; return CLASS;
             break;
             case IF:
-            print_token("if", Colours::CFCOL);col+=yyleng; return IF;
+            print_token("if", Colours::CFCOL);gCol+=yyleng; return IF;
             break;
             case RETURN:
-            print_token("RETURN", Colours::CFCOL);col+=yyleng; return RETURN;
+            print_token("RETURN", Colours::CFCOL);gCol+=yyleng; return RETURN;
             break;
             case WHILE:
-             col+=yyleng; return WHILE;
+             gCol+=yyleng; return WHILE;
             break;
             case FOR:            
-            col+=yyleng; return FOR;
+            gCol+=yyleng; return FOR;
             break;
             case ELSE:
-            col+=yyleng; return ELSE;
+            gCol+=yyleng; return ELSE;
             break;
             case CONST:
-            print_token("CONST", Colours::TYPECOL);col+=yyleng; return CONST;
+            print_token("CONST", Colours::TYPECOL);gCol+=yyleng; return CONST;
             break;
             case EVAL:
-            print_token("EVAL");col+=yyleng; return EVAL;
+            print_token("EVAL");gCol+=yyleng; return EVAL;
             break;
+
             case BTYPE:
-            print_token("type"); yylval.TypeNode = new TypeNode(yytext); col+=yyleng; return BTYPE; 
+            print_token("type"); yylval.TypeNode = new TypeNode(yytext); gCol+=yyleng; return BTYPE; 
             break;
             case INT_TYPE:
-            print_token("INTTYPE", Colours::TYPECOL); yylval.TypeNode = new IntType(); col+=yyleng; return BTYPE; 
+            print_token("INTTYPE", Colours::TYPECOL); yylval.TypeNode = new IntType(); gCol+=yyleng;yylval.TypeNode->span_end();yylval.TypeNode->span_end(); return BTYPE; 
             break;
+            case FLOAT_TYPE:
+            print_token("FLOAT_TYPE", Colours::TYPECOL); yylval.TypeNode = new FloatType(); gCol+=yyleng;yylval.TypeNode->span_end(); return BTYPE; 
+            break;
+            case BOOL_TYPE:
+            print_token("BOOL_TYPE", Colours::TYPECOL); yylval.TypeNode = new BoolType(); gCol+=yyleng;yylval.TypeNode->span_end(); return BTYPE; 
+            break; 
+            case STRING_TYPE:
+            print_token("STRING_TYPE", Colours::TYPECOL); yylval.TypeNode = new StringType(); gCol+=yyleng;yylval.TypeNode->span_end(); return BTYPE; 
+            break; 
+            case CHAR_TYPE:
+            print_token("CHAR_TYPE", Colours::TYPECOL); yylval.TypeNode = new CharType(); gCol+=yyleng;yylval.TypeNode->span_end(); return BTYPE; 
+            break; 
+
+            case INTVAL:
+            print_token("INTVAL", Colours::VALCOL);yylval.value_node = new IntValue(yytext);gCol+=yyleng;yylval.TypeNode->span_end(); return INTVAL;
+            break;
+            case FLOATVAL:
+            print_token("FLOATVAl", Colours::VALCOL);yylval.value_node = new FloatValue(yytext);gCol+=yyleng;yylval.TypeNode->span_end(); return INTVAL;
+            break;
+            case BOOLVAL:
+            print_token("BOOLVAL", Colours::VALCOL);yylval.value_node = new BoolValue(yytext);gCol+=yyleng;yylval.TypeNode->span_end(); return INTVAL;
+            break;
+            case STRINGVAL:
+            print_token("STRINGVAL", Colours::VALCOL);yylval.value_node = new StringValue(yytext);gCol+=yyleng;yylval.TypeNode->span_end(); return INTVAL;
+            break;
+            case CHARVAL:
+            print_token("CHARVAL", Colours::VALCOL);yylval.value_node = new CharValue(yytext+1);gCol+=yyleng;yylval.TypeNode->span_end(); return INTVAL;
+            break;
+
             case BGIN:
-            col+=yyleng; return BGIN;
+            gCol+=yyleng; return BGIN;
             break;
             case END:
-            col+=yyleng; return END;
+            gCol+=yyleng; return END;
             break;
+
             case ID:
-            print_token("ID",Colours::IDCOL);yylval.node = new GeneralInfo(yytext,row,col); col+=yyleng; return ID;
-            break;
-            case ASSIGN:
-            col+=yyleng; return ASSIGN;
-            break;
-            case INT_NR:
-            print_token("INTVAL", Colours::VALCOL);yylval.int_value = new IntValue(yytext);col+=yyleng; return INT_NR;
+            print_token("ID",Colours::IDCOL);yylval.node = new RawNode(yytext); gCol+=yyleng;yylval.node->span_end(); return ID;
+            break; 
+            
             break;
             default:
-            string s = ""; s+=yytext[0] ;print_token(s); col+=yyleng; return yytext[0];
+            string s = ""; s+=yytext[0];  yylval.spanned = new Span(); ;print_token(s); gCol+=yyleng; return yytext[0];
         }        
     } 
     return IGNORETOKEN; 
@@ -74,8 +101,8 @@ int treat_helper(int type) {
 "->" {treat_macro(RARROW);}
 "fn" {treat_macro(FN);}
 "class" {treat_macro(CLASS);}
-"private:" {print_token("private:");col+=yyleng; }
-"public:" {print_token("public:");;col+=yyleng; }
+"private:" {print_token("private:");gCol+=yyleng; }
+"public:" {print_token("public:");;gCol+=yyleng; }
 "if" {treat_macro(IF);}
 "return" {treat_macro(RETURN);}
 "while" {treat_macro(WHILE);}
@@ -83,18 +110,32 @@ int treat_helper(int type) {
 "else" {treat_macro(ELSE);}
 "const" {treat_macro(CONST);}
 "eval"  {treat_macro(EVAL);}
-"}"     {print_token("}");col+=yyleng;ignore_after_return_statement = false; return '}';}
+"}"     {print_token("}");ignore_after_return_statement = false; treat_macro(yytext[0]);}
 
 "int" { treat_macro(INT_TYPE);}
-"float"|"char"|"string"|"void" {treat_macro(BTYPE);} 
+"float" { treat_macro(FLOAT_TYPE);}
+"char" { treat_macro(CHAR_TYPE);}
+"string" { treat_macro(STRING_TYPE);}
+"bool" { treat_macro(BOOL_TYPE);}
+"void" {treat_macro(BTYPE);} 
+
 "begin_progr" {treat_macro(BGIN);}
 "end_progr" {treat_macro(END);}
-[a-zA-Z][a-zA-Z0-9]* {treat_macro(ID);}
-":=" {treat_macro(ASSIGN);}
-[-+]{0,1}[0-9]+ {treat_macro(INT_NR);}
+
+
+
+[-+]?[0-9]+ {treat_macro(INTVAL);}
+[-+]?[0-9]+\.[0-9]+ {treat_macro(FLOATVAL)}
+true|false {treat_macro(BOOLVAL)}
+
+[a-zA-Z][a-zA-Z0-9]* {treat_macro(ID);} 
+
+"\""[^"]*"\""     { treat_macro(STRINGVAL); }
+'.'                { treat_macro(CHARVAL); }
+
 "#"[^#]*"#" {}
-[ \t] {print_token("_");col+=yyleng;};
-\n {print_token("NL\n");row++;col=1;}
+[ \t] {print_token("_");gCol+=yyleng;};
+\n {print_token("NL\n");gRow++;gCol=1;}
 
 . {treat_macro(yytext[0]);}
 

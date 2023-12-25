@@ -9,52 +9,36 @@ extern char* yytext;
 extern int yylex();
 SymbolTable * rootSymbolTable;
 SymbolTable * currentSymbolTable;
-int row, col;
+int gRow, gCol;
+Span gTempSpan;
 
-void yyerror(const char * s);
-TypeNode * gReturnType;
-Expression* return_expression;
+void yyerror(const char * s); 
+Expression* gReturnExpr = nullptr;
 
 #define checkSymbol(x) {if ( currentSymbolTable->is_symbol_defined_in_path(x->content)==nullptr) printf("symbol not defined %s at %d:%d",x->content.c_str(),x->row,x->col); }
 #define getSymbol(x) {currentSymbolTable->is_symbol_defined_in_path(x->content)}
 #define backtrack_scope() {currentSymbolTable = currentSymbolTable->getParent();}
-bool treat_return_statement(Expression * val) {
+bool treat_return_statement(Expression * val) { 
 
-        bool res = true;
+        gTempSpan.start.row = gRow;
+        gTempSpan.start.col = gCol;
+        if(gReturnExpr) delete gReturnExpr ; 
+        gReturnExpr = nullptr;
+
         if(currentSymbolTable->type != scopeType::FUNC_SCOPE) {
-                printf("return statement in a non-function block");
-                res = false;
-                goto return_label;
+                semantic_error("line %d... return statement in a non-function block",gRow);                
+                return false;
         }
-
-        if(!val)  {
-                if(currentSymbolTable->func_details->return_type->type == types::VOID) {
-                        goto return_label;                
-                }                
-                res = false;
-                goto return_label;
-        }
-
-        {      
-        auto val = return_expression->eval();
-        auto type = val->type;
-        res = Expression::are_types_equal(type,currentSymbolTable->func_details->return_type);
-        if(res) {gReturnType = type; printf("changed global gReturnType");}
-        }
+        gReturnExpr = val;        
         
-return_label:        
-
-        if(res) printf("correct return value");
-        else printf("the type of the return value doesn't match the expected type");
-
-
-        return res;
+        return true;
 }
 
 %}
 
 %union {
-    class GeneralInfo* node; 
+    class Span * spanned;    
+    class RawNode* node; 
     class TypeNode* TypeNode;
     class Expression* exprnode;
     class Symbol * symbol_node;
@@ -66,15 +50,15 @@ return_label:
     class Vector* container;
     class IntType * int_type;
     class IntValue * int_value;
+    class FloatValue * float_value;
     class ValueNode * value_node;
     class ArrayValue * array_value_node; 
 }
 
-
-
-%token<node>  BGIN END ASSIGN ID IF ELSE WHILE FOR  CONST RARROW FN RETURN CLASS EVAL INT_TYPE
-%token<int_value> INT_NR
-%token<TypeNode> BTYPE 
+%token<spanned>  '{' '}' '[' ']' ';' ','
+%token<node>  BGIN END ASSIGN ID IF ELSE WHILE FOR  CONST RARROW FN RETURN CLASS EVAL   
+%token<TypeNode> BTYPE FLOAT_TYPE INT_TYPE BOOL_TYPE STRING_TYPE CHAR_TYPE
+%token <value_node> INTVAL FLOATVAL BOOLVAL STRINGVAL CHARVAL
 
 %type<TypeNode> gtype return_type 
 %type<node>     class_declaration declaration IF_S IF_B statement statements IF_ELSE_S IF_ELSE_B assignment ISCONST decls_funcs eval_expression function_body
@@ -119,7 +103,7 @@ statement:
 
  
 
-return_statement: RETURN return_value {print_reduction("ret_statement -> return return_value "); return_expression = $2; treat_return_statement($2); ignore_after_return_statement = true;}
+return_statement: RETURN return_value {print_reduction("ret_statement -> return return_value "); treat_return_statement($2); ignore_after_return_statement = true;}
 return_value: expr ';' {$$ = $1;}
         |       ';'{$$=nullptr;}
 
@@ -132,18 +116,18 @@ init: '=' expr ';'  {$$ = $2;}
 
 declaration:
           gtype ID init   { print_reduction("decl->const type id init;");
-                                            currentSymbolTable->define_symbol($1,$2->content,$3);  $$ = new GeneralInfo(""); }
+                                            currentSymbolTable->declare_symbol($1,$2,$3);  $$ = new RawNode("");}
         | gtype ID array_indexing init  { print_reduction("decl -> gtype ID array_indexing init");
-                                                currentSymbolTable->define_array_symbol($2->content,$1, $3,$4); $$ = $2;}
+                                                currentSymbolTable->declare_array_symbol($2,$1, $3,$4); $$ = $2;}
         | class_declaration ';' {print_reduction(" declaration -> class_declaration ");}
-
-
-
         ;
+
+
+
 class_declaration: 
-         ID ID  {print_reduction(" dclass_Declaration -> uninitialized ");currentSymbolTable->define_user_symbol($1,$2);}
+         ID ID  {print_reduction(" dclass_Declaration -> uninitialized ");currentSymbolTable->declare_user_symbol($1,$2);}
         
-        | ID ID object_init {print_reduction(" dclass_Declaration -> initialized");currentSymbolTable->define_user_symbol($1,$2,$3);}
+        | ID ID object_init {print_reduction(" dclass_Declaration -> initialized");currentSymbolTable->declare_user_symbol($1,$2,$3);}
         
 object_init: '(' ')' {$$ = nullptr;}
         | '(' field_val ')' {$$ = $2;}
@@ -159,22 +143,22 @@ array_value: '[' expressions ']' {print_reduction("array_value ->  [ expressions
 
 
 array_indexing: '[' expr ']' {print_reduction("array_indexing -> '[' rval ']'");$$  = new ArrayIndexing(); $$->add_index($2); }
-        | array_indexing '[' expr ']' {print_reduction("array_indexing -> array_indexing '[' INT_NR ']'"); $$ = $1; $$->add_index($3);}
+        | array_indexing '[' expr ']' {print_reduction("array_indexing -> array_indexing '[' INTVAL ']'"); $$ = $1; $$->add_index($3);}
         ;
 array_element: ID array_indexing {print_reduction("array element") ;$$ = currentSymbolTable->symbol_indexing($1,$2);}
 
 function: func_signature function_body{ print_reduction("function -> func_signature statements return rval}");
-                                                backtrack_scope();$$ = $1;$$->set_gReturnType(); } 
+                                                backtrack_scope();$$ = $1;$$->check_return_type();$$->set_lines($1,$2); } 
                                                                         
-function_body: statements '}' {print_reduction(" funcbody -> statements }"); $$ = $1;}
-        | '}' {print_reduction(" funcbody -> empty }"); $$ = nullptr;}
+function_body: statements '}' {print_reduction(" funcbody -> statements }"); $$ = $1;$$->set_span($2);printf("body set spanned to %s\n",$2->span_to_string().c_str());}
+        | '}' {print_reduction(" funcbody -> empty }"); $$ = new RawNode();$$->set_span($1);printf("body set spanned to %s\n",$1->span_to_string().c_str());}
 
 func_signature:
-         FN ID arguments return_type { print_reduction("functions_s -> fn id arguments -> type {"); $$ = new FunctionDetails($2->content,$4,$3);
-                                        currentSymbolTable=  currentSymbolTable->addFunction($$);
+         FN ID arguments return_type { print_reduction("functions_s -> fn id arguments -> type {"); $$ = new FunctionDetails($2->content,$4,$3); $$->set_span($2); printf("signature set spanned to %s\n",$$->span_to_string().c_str());
+                                        currentSymbolTable=  currentSymbolTable->addFunction($$); currentSymbolTable->set_span($2);
                                         }
         ;
-return_type: RARROW gtype '{' {print_reduction("return_type -> RARROW gtype {"); $$ = $2; $2->print(); }
+return_type: RARROW gtype '{' {print_reduction("return_type -> RARROW gtype {"); $$ = $2;}
         | '{'{print_reduction("return_type - -> empty {"); $$ = nullptr;}
 
 function_call : ID '.' id_parameters {print_reduction("FunctionCall -> ID . id_parameters"); $$ = new FunctionCall($1,$3);
@@ -199,14 +183,18 @@ param_list: param_list ','  parameter {print_reduction("parameter list -> parame
 parameter: gtype ID { print_reduction("paramter -> type id"); $$ = new Symbol($2->content,$1,nullptr);}
         ;
 
-expr:     expr '+' expr { print_reduction("expr -> expr + expr");$$ = new Expression(OperTypes::ADD,$1,$3);} 
+expr:     expr '+' expr { print_reduction("expr -> expr + expr");$$ = new Expression(OperTypes::ADD,$1,$3);}
         | expr '-' expr { print_reduction("expr -> expr - expr");$$ = new Expression(OperTypes::SUB,$1,$3);} 
         | expr '/' expr { print_reduction("expr -> expr / expr");$$ = new Expression(OperTypes::DIV,$1,$3);} 
         | expr '*' expr { print_reduction("expr -> expr * expr");$$ = new Expression(OperTypes::MUL,$1,$3);} 
         //| '-' expr %prec UMINUS  { print_reduction("expr -> ( expr ) ");$$ = $2; $$->neg(); }  to do
         | '(' expr ')' { print_reduction("expr -> ( expr ) ");$$ = $2;}  
-        | ID {print_reduction("expr -> ID");$$ = new Expression($1->content); delete $1;}; 
-        | INT_NR {print_reduction("expr -> INT_NR");$$ = new Expression($1); };  
+        | ID {print_reduction("expr -> ID");$$ = new Expression($1); delete $1;};
+        | INTVAL {print_reduction("expr -> INTVAL");$$ = new Expression($1); };  
+        | FLOATVAL {print_reduction("expr -> FLOATVAL");$$ = new Expression($1); };  
+        | STRINGVAL {print_reduction("expr -> STRINGVAL");$$ = new Expression($1); };  
+        | BOOLVAL {print_reduction("expr -> BOOLVAL");$$ = new Expression($1); };  
+        | CHARVAL {print_reduction("expr -> CHARVAL");$$ = new Expression($1); };  
         | member_access {print_reduction("expr -> member_access");$$ = new Expression($1); };
         | function_call {print_reduction("epxr - function call ");$$ = new Expression($1);}
         | array_element {print_reduction("epxr - array_element ");$$ = new Expression($1);}
@@ -217,7 +205,7 @@ expr:     expr '+' expr { print_reduction("expr -> expr + expr");$$ = new Expres
 assignment: 
           ID '=' expr {print_reduction(" ID = expr"); currentSymbolTable->assign($1, $3, nullptr);}
         | ID array_indexing '=' expr {print_reduction(" ID = expr"); currentSymbolTable->assign($1,$4,$2);}
-        
+        | member_access '=' expr {print_reduction(" member_access = expr"); currentSymbolTable->assign($1,$3,nullptr);}
  
         ;
 
@@ -225,16 +213,16 @@ assignment:
 ISCONST : CONST {print_reduction("isconst -> const");$$ = $1;} 
         ;
 
-IF_S:   IF '(' expr ')' '{'  { print_reduction("IF_S -> IF ( expr ) {");$$ = new GeneralInfo("IF_S"); delete $1;string expr = "if("; expr+=$3->content+")"; currentSymbolTable = currentSymbolTable->addScope(expr);}    
+IF_S:   IF '(' expr ')' '{'  { print_reduction("IF_S -> IF ( expr ) {");$$ = new RawNode("IF_S"); delete $1;string expr = "if()"; ; currentSymbolTable = currentSymbolTable->addScope(expr);}
     ;
 
-IF_B:   IF_S statements '}' { print_reduction("IF_B -> IF_S statements }");$$ = new GeneralInfo("IF_B"); backtrack_scope();}
+IF_B:   IF_S statements '}' { print_reduction("IF_B -> IF_S statements }");$$ = new RawNode("IF_B"); backtrack_scope();}
     ;        
 
-IF_ELSE_S:  IF_S statements '}' ELSE '{'  { print_reduction("IF_ELSE_S -> IF_S statements } ELSE {");$$ = new GeneralInfo("IF_ELSE_S"); delete $1; delete $4;string elsescope = "else(" + currentSymbolTable->name+")"; backtrack_scope(); currentSymbolTable = currentSymbolTable->addScope(elsescope);}    
+IF_ELSE_S:  IF_S statements '}' ELSE '{'  { print_reduction("IF_ELSE_S -> IF_S statements } ELSE {");$$ = new RawNode("IF_ELSE_S"); delete $1; delete $4;string elsescope = "else(" + currentSymbolTable->name+")"; backtrack_scope(); currentSymbolTable = currentSymbolTable->addScope(elsescope);}    
     ;
 
-IF_ELSE_B: IF_ELSE_S statements '}' { print_reduction("IF_ELSE_B -> IF_ESLE_S statements }");$$ = new GeneralInfo("IF_ELSE_B"); backtrack_scope();}
+IF_ELSE_B: IF_ELSE_S statements '}' { print_reduction("IF_ELSE_B -> IF_ESLE_S statements }");$$ = new RawNode("IF_ELSE_B"); backtrack_scope();}
     ;
 
 class_s: CLASS ID '{' {print_reduction("classb_S-> class id { ");$$ = currentSymbolTable = currentSymbolTable->add_class($2);}
@@ -253,14 +241,13 @@ member_access: ID '.' ID {print_reduction("member_access -> ID . ID "); $$ = cur
 eval_expression : EVAL '(' expr ')'  {print_reduction("evalexpr -> eval ( expr ) "); $3->eval_wrapper(); }
 
 %%
- 
+
 void yyerror(const char * s){
-    printf("error: %s at lin/column:%d/%d", s, row,col);
+    printf("error: %s at lin/column:%d/%d", s, gRow,gCol);
 }
  
-int main(int argc, char** argv){
-        
-        col = row = 1; 
+int main(int argc, char** argv){ 
+        gCol = gRow = 1; 
         rootSymbolTable = new SymbolTable("global");
         currentSymbolTable = rootSymbolTable;
         yyin = fopen(argv[1], "r");    
