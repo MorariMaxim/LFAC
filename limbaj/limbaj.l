@@ -62,24 +62,55 @@ int treat_helper(int type) {
             print_token("INTVAL", Colours::VALCOL);yylval.value_node = new IntValue(yytext);gCol+=yyleng;yylval.TypeNode->span_end(); return INTVAL;
             break;
             case FLOATVAL:
-            print_token("FLOATVAl", Colours::VALCOL);yylval.value_node = new FloatValue(yytext);gCol+=yyleng;yylval.TypeNode->span_end(); return INTVAL;
+            print_token("FLOATVAl", Colours::VALCOL);yylval.value_node = new FloatValue(yytext);gCol+=yyleng;yylval.TypeNode->span_end(); return FLOATVAL;
             break;
             case BOOLVAL:
-            print_token("BOOLVAL", Colours::VALCOL);yylval.value_node = new BoolValue(yytext);gCol+=yyleng;yylval.TypeNode->span_end(); return INTVAL;
+            print_token("BOOLVAL", Colours::VALCOL);yylval.value_node = new BoolValue(yytext);gCol+=yyleng;yylval.TypeNode->span_end(); return BOOLVAL;
             break;
             case STRINGVAL:
-            print_token("STRINGVAL", Colours::VALCOL);yylval.value_node = new StringValue(yytext);gCol+=yyleng;yylval.TypeNode->span_end(); return INTVAL;
+            print_token("STRINGVAL", Colours::VALCOL);yylval.value_node = new StringValue(yytext);gCol+=yyleng;yylval.TypeNode->span_end(); return STRINGVAL;
             break;
             case CHARVAL:
-            print_token("CHARVAL", Colours::VALCOL);yylval.value_node = new CharValue(yytext+1);gCol+=yyleng;yylval.TypeNode->span_end(); return INTVAL;
+            print_token("CHARVAL", Colours::VALCOL);yylval.value_node = new CharValue(yytext+1);gCol+=yyleng;yylval.TypeNode->span_end(); return CHARVAL;
             break;
 
-            case BGIN:
+            case LNOTT:
+            print_token("LNOTT");gCol+=yyleng;return LNOTT;
+            break;
+            case LANDT:
+            print_token("LANDT");gCol+=yyleng;return LANDT;
+            break;
+            case LORT:
+            print_token("LORT");gCol+=yyleng;return LORT;
+            break;
+            case GEQT:
+            print_token("GEQT");gCol+=yyleng;return GEQT;
+            break;
+            case LEQT:
+            print_token("LEQT");gCol+=yyleng;return LEQT;
+            break;
+            case EQT:
+            print_token("EQT");gCol+=yyleng;return EQT;
+            break;
+            case NEQT:
+            print_token("NEQT");gCol+=yyleng;return NEQT;
+            break;
+
+            case BGIN:  
             gCol+=yyleng; return BGIN;
             break;
             case END:
             gCol+=yyleng; return END;
             break;
+            case CLASS_SECTION: 
+            gCol+=yyleng; return CLASS_SECTION;
+            case GLOBAL_VARIABLES:
+            gCol+=yyleng; return GLOBAL_VARIABLES;
+            case GLOBAL_FUNCTIONS:
+            gCol+=yyleng; return GLOBAL_FUNCTIONS;
+            case MAIN_FUNCTION:
+            gCol+=yyleng; return MAIN_FUNCTION;
+            
 
             case ID:
             print_token("ID",Colours::IDCOL);yylval.node = new RawNode(yytext); gCol+=yyleng;yylval.node->span_end(); return ID;
@@ -110,7 +141,19 @@ int treat_helper(int type) {
 "else" {treat_macro(ELSE);}
 "const" {treat_macro(CONST);}
 "eval"  {treat_macro(EVAL);}
+"||" {treat_macro(LORT);}
+"&&" {treat_macro(LANDT);}
+"!" {treat_macro(LNOTT);}
+"==" {treat_macro(EQT);}
+"!=" {treat_macro(NEQT);}
+"<=" {treat_macro(LEQT);}
+">=" {treat_macro(GEQT);}
+
 "}"     {print_token("}");ignore_after_return_statement = false; treat_macro(yytext[0]);}
+"CLASS_SECTION"  {treat_macro(CLASS_SECTION);}
+"GLOBAL_VARIABLES"  {treat_macro(GLOBAL_VARIABLES);}
+"GLOBAL_FUNCTIONS"  {treat_macro(GLOBAL_FUNCTIONS);}
+"MAIN_FUNCTION" {treat_macro(MAIN_FUNCTION);}
 
 "int" { treat_macro(INT_TYPE);}
 "float" { treat_macro(FLOAT_TYPE);}

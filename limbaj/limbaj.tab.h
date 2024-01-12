@@ -68,18 +68,29 @@ extern int yydebug;
     RETURN = 269,                  /* RETURN  */
     CLASS = 270,                   /* CLASS  */
     EVAL = 271,                    /* EVAL  */
-    BTYPE = 272,                   /* BTYPE  */
-    FLOAT_TYPE = 273,              /* FLOAT_TYPE  */
-    INT_TYPE = 274,                /* INT_TYPE  */
-    BOOL_TYPE = 275,               /* BOOL_TYPE  */
-    STRING_TYPE = 276,             /* STRING_TYPE  */
-    CHAR_TYPE = 277,               /* CHAR_TYPE  */
-    INTVAL = 278,                  /* INTVAL  */
-    FLOATVAL = 279,                /* FLOATVAL  */
-    BOOLVAL = 280,                 /* BOOLVAL  */
-    STRINGVAL = 281,               /* STRINGVAL  */
-    CHARVAL = 282,                 /* CHARVAL  */
-    UMINUS = 283                   /* UMINUS  */
+    CLASS_SECTION = 272,           /* CLASS_SECTION  */
+    GLOBAL_FUNCTIONS = 273,        /* GLOBAL_FUNCTIONS  */
+    GLOBAL_VARIABLES = 274,        /* GLOBAL_VARIABLES  */
+    MAIN_FUNCTION = 275,           /* MAIN_FUNCTION  */
+    LORT = 276,                    /* LORT  */
+    LANDT = 277,                   /* LANDT  */
+    LNOTT = 278,                   /* LNOTT  */
+    EQT = 279,                     /* EQT  */
+    NEQT = 280,                    /* NEQT  */
+    LEQT = 281,                    /* LEQT  */
+    GEQT = 282,                    /* GEQT  */
+    BTYPE = 283,                   /* BTYPE  */
+    FLOAT_TYPE = 284,              /* FLOAT_TYPE  */
+    INT_TYPE = 285,                /* INT_TYPE  */
+    BOOL_TYPE = 286,               /* BOOL_TYPE  */
+    STRING_TYPE = 287,             /* STRING_TYPE  */
+    CHAR_TYPE = 288,               /* CHAR_TYPE  */
+    INTVAL = 289,                  /* INTVAL  */
+    FLOATVAL = 290,                /* FLOATVAL  */
+    BOOLVAL = 291,                 /* BOOLVAL  */
+    STRINGVAL = 292,               /* STRINGVAL  */
+    CHARVAL = 293,                 /* CHARVAL  */
+    UMINUS = 294                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -88,7 +99,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 39 "limbaj.y"
+#line 40 "limbaj.y"
 
     class Span * spanned;    
     class RawNode* node; 
@@ -107,7 +118,7 @@ union YYSTYPE
     class ValueNode * value_node;
     class ArrayValue * array_value_node; 
 
-#line 111 "limbaj.tab.h"
+#line 122 "limbaj.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

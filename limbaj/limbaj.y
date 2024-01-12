@@ -18,6 +18,7 @@ Expression* gReturnExpr = nullptr;
 #define checkSymbol(x) {if ( currentSymbolTable->is_symbol_defined_in_path(x->content)==nullptr) printf("symbol not defined %s at %d:%d",x->content.c_str(),x->row,x->col); }
 #define getSymbol(x) {currentSymbolTable->is_symbol_defined_in_path(x->content)}
 #define backtrack_scope() {currentSymbolTable = currentSymbolTable->getParent();}
+#define check_main(f) {if(f->name != "main" ) semantic_error("no main function");  }
 bool treat_return_statement(Expression * val) { 
 
         gTempSpan.start.row = gRow;
@@ -55,14 +56,14 @@ bool treat_return_statement(Expression * val) {
     class ArrayValue * array_value_node; 
 }
 
-%token<spanned>  '{' '}' '[' ']' ';' ','
-%token<node>  BGIN END ASSIGN ID IF ELSE WHILE FOR  CONST RARROW FN RETURN CLASS EVAL   
+%token<spanned>  '{' '}' '[' ']' ';' ',' '(' ')' 
+%token<node>  BGIN END ASSIGN ID IF ELSE WHILE FOR  CONST RARROW FN RETURN CLASS EVAL CLASS_SECTION GLOBAL_FUNCTIONS GLOBAL_VARIABLES MAIN_FUNCTION LORT LANDT LNOTT EQT NEQT LEQT GEQT     
 %token<TypeNode> BTYPE FLOAT_TYPE INT_TYPE BOOL_TYPE STRING_TYPE CHAR_TYPE
 %token <value_node> INTVAL FLOATVAL BOOLVAL STRINGVAL CHARVAL
 
 %type<TypeNode> gtype return_type 
-%type<node>     class_declaration declaration IF_S IF_B statement statements IF_ELSE_S IF_ELSE_B assignment ISCONST decls_funcs eval_expression function_body
-%type<exprnode> expr init return_value
+%type<node>     class_declaration declaration if_s if_b statement statements if_else_b if_else_s  assignment ISCONST decls_funcs eval_expression function_body class_section global_variables global_functions main while_s while_b 
+%type<exprnode> expr init return_value 
 %type<symbol_node> parameter member_access 
 %type<funcNode> func_signature function 
 %type<funcCall> function_call  
@@ -74,8 +75,15 @@ bool treat_return_statement(Expression * val) {
 %start progr
 
 
+%left LORT
+%left LANDT
+%left EQT NEQT
+%left '>' GEQT
+%left '<' LEQT
 %left '+' '-'
 %left '*' '/'
+
+%right LNOTT
 %right UMINUS
 
 
@@ -83,7 +91,7 @@ bool treat_return_statement(Expression * val) {
 
 %%
 
-progr: statements  { print_reduction("syntactically correct program"); }
+progr: class_section global_variables global_functions main  { print_reduction("syntactically correct program"); }
         |            { print_reduction("empty prog");}
         ;
 statements: statement  { $$ = $1; print_reduction("statements -> statement");}
@@ -92,16 +100,27 @@ statements: statement  { $$ = $1; print_reduction("statements -> statement");}
 statement:
           declaration { print_reduction("stmt -> declaration");}
         | expr ';'  { print_reduction("stmt -> expr");}
-        | IF_B { print_reduction("stmt -> IF_B");}
-        | IF_ELSE_B { print_reduction("statement -> IF_ELSE_B");}
+        | if_b { print_reduction("stmt -> IF_B");}
+        | if_else_b { print_reduction("statement -> IF_ELSE_B");}
         | function { print_reduction("statement -> function"); $$ = $1;}
         | assignment ';' {print_reduction("statement -> assignment");} 
-        | class_b {print_reduction("statement -> class_b");}
         | eval_expression ';' {print_reduction("statement -> eval_expression");} 
         | return_statement {print_reduction("statement -> return statement");} 
+        | while_b {print_reduction("statement -> while_b");}
+        | for_b {print_reduction("statement -> for_b");}
         ;
 
- 
+class_section: CLASS_SECTION 
+        | class_section class_b 
+
+global_variables: GLOBAL_VARIABLES
+        | global_variables declaration
+
+global_functions: GLOBAL_FUNCTIONS
+        | global_functions function
+
+main:   MAIN_FUNCTION function 
+
 
 return_statement: RETURN return_value {print_reduction("ret_statement -> return return_value "); treat_return_statement($2); ignore_after_return_statement = true;}
 return_value: expr ';' {$$ = $1;}
@@ -187,8 +206,19 @@ expr:     expr '+' expr { print_reduction("expr -> expr + expr");$$ = new Expres
         | expr '-' expr { print_reduction("expr -> expr - expr");$$ = new Expression(OperTypes::SUB,$1,$3);} 
         | expr '/' expr { print_reduction("expr -> expr / expr");$$ = new Expression(OperTypes::DIV,$1,$3);} 
         | expr '*' expr { print_reduction("expr -> expr * expr");$$ = new Expression(OperTypes::MUL,$1,$3);} 
-        //| '-' expr %prec UMINUS  { print_reduction("expr -> ( expr ) ");$$ = $2; $$->neg(); }  to do
-        | '(' expr ')' { print_reduction("expr -> ( expr ) ");$$ = $2;}  
+
+        | expr LORT expr { print_reduction("expr -> expr * expr");$$ = new Expression(OperTypes::LOR,$1,$3);} 
+        | expr LANDT expr { print_reduction("expr -> expr * expr");$$ = new Expression(OperTypes::LAND,$1,$3);} 
+        | LNOTT expr %prec UMINUS  { print_reduction("expr -> ! expr");$$ = new Expression(OperTypes::LNOT,$2,nullptr);}  
+        | expr EQT expr { print_reduction("expr -> expr == expr");$$ = new Expression(OperTypes::EQ,$1,$3);} 
+        | expr NEQT expr { print_reduction("expr -> expr * expr");$$ = new Expression(OperTypes::NEQ,$1,$3);} 
+        | expr '<' expr { print_reduction("expr -> expr * expr");$$ = new Expression(OperTypes::LE,$1,$3);} 
+        | expr LEQT expr { print_reduction("expr -> expr * expr");$$ = new Expression(OperTypes::LEQ,$1,$3);} 
+        | expr '>' expr { print_reduction("expr -> expr * expr");$$ = new Expression(OperTypes::GE,$1,$3);} 
+        | expr GEQT expr { print_reduction("expr -> expr * expr");$$ = new Expression(OperTypes::GEQ,$1,$3);} 
+
+        | '-' expr %prec UMINUS  { print_reduction("expr -> - expr");$$ = new Expression(OperTypes::NEG,$2,nullptr);}  
+        | '(' expr ')' { print_reduction("expr -> ( expr ) ");$$ = $2;$$->set_span_start($1);$$->set_span_end($3);$1->print_span();$3->print_span();}  
         | ID {print_reduction("expr -> ID");$$ = new Expression($1); delete $1;};
         | INTVAL {print_reduction("expr -> INTVAL");$$ = new Expression($1); };  
         | FLOATVAL {print_reduction("expr -> FLOATVAL");$$ = new Expression($1); };  
@@ -213,17 +243,40 @@ assignment:
 ISCONST : CONST {print_reduction("isconst -> const");$$ = $1;} 
         ;
 
-IF_S:   IF '(' expr ')' '{'  { print_reduction("IF_S -> IF ( expr ) {");$$ = new RawNode("IF_S"); delete $1;string expr = "if()"; ; currentSymbolTable = currentSymbolTable->addScope(expr);}
+if_s:   IF '(' expr ')' '{'  { print_reduction("IF_S -> IF ( expr ) {");$$ = new RawNode("IF_S"); delete $1; currentSymbolTable = currentSymbolTable->addScope("if");}
     ;
 
-IF_B:   IF_S statements '}' { print_reduction("IF_B -> IF_S statements }");$$ = new RawNode("IF_B"); backtrack_scope();}
+if_b:   if_s statements '}' { print_reduction("IF_B -> IF_S statements }");$$ = new RawNode("IF_B"); backtrack_scope();}
+        | if_s  '}' { print_reduction("IF_B -> IF_S  }");$$ = new RawNode("IF_B"); backtrack_scope();}
     ;        
 
-IF_ELSE_S:  IF_S statements '}' ELSE '{'  { print_reduction("IF_ELSE_S -> IF_S statements } ELSE {");$$ = new RawNode("IF_ELSE_S"); delete $1; delete $4;string elsescope = "else(" + currentSymbolTable->name+")"; backtrack_scope(); currentSymbolTable = currentSymbolTable->addScope(elsescope);}    
+if_else_s:  if_b ELSE '{'  { print_reduction("IF_ELSE_S -> if_b ELSE {");$$ = new RawNode("IF_ELSE_S"); delete $1; delete $2; delete $3; currentSymbolTable = currentSymbolTable->addScope("else");}    
     ;
 
-IF_ELSE_B: IF_ELSE_S statements '}' { print_reduction("IF_ELSE_B -> IF_ESLE_S statements }");$$ = new RawNode("IF_ELSE_B"); backtrack_scope();}
+if_else_b: if_else_s statements '}' { print_reduction("IF_ELSE_B -> if_else_s { statements } ");$$ = new RawNode("IF_ELSE_B"); backtrack_scope();}
+        |  if_else_s '}' { print_reduction("IF_ELSE_B -> if_else_s { } ");$$ = new RawNode("IF_ELSE_B"); backtrack_scope();}
     ;
+
+while_s: WHILE '(' expr ')' '{' {currentSymbolTable = currentSymbolTable->addScope("while"); }
+
+while_b: while_s '}' {backtrack_scope();}
+        | while_s statements '}'{backtrack_scope();}
+
+for_b: for_s2 '}' {backtrack_scope();}
+        | for_s2 statements '}'{backtrack_scope();}
+
+for_s1: FOR { {print_reduction("for_s1 -> FOR");} currentSymbolTable = currentSymbolTable->addScope("for"); }
+
+for_s2: for_s1 '(' for_d for_c for_st '{'
+
+for_d: declaration {print_reduction("for_d -> declaration ;");}
+        | ';'   {print_reduction("for_d -> ;");}
+for_c: expr ';' {print_reduction("for_c -> expr ;");}
+        | ';'{print_reduction("for_c -> ;");}
+for_st: statements ')'
+        | ')'
+
+
 
 class_s: CLASS ID '{' {print_reduction("classb_S-> class id { ");$$ = currentSymbolTable = currentSymbolTable->add_class($2);}
         ;
@@ -236,7 +289,7 @@ class_b:  class_s decls_funcs '}' {print_reduction("classb -> class_S decls_func
         | class_s '}' {print_reduction("classb -> class_S } ");backtrack_scope();}
         ;
 
-member_access: ID '.' ID {print_reduction("member_access -> ID . ID "); $$ = currentSymbolTable->check_member_access($1,$3);}
+member_access: ID '.' ID {print_reduction("member_access -> ID . ID "); $$ = currentSymbolTable->check_member_access($1,$3);$$->set_span($1,$3);}
 
 eval_expression : EVAL '(' expr ')'  {print_reduction("evalexpr -> eval ( expr ) "); $3->eval_wrapper(); }
 

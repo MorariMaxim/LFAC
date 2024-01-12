@@ -1,5 +1,3 @@
-basic types: bool, char, float, string
-
 check
 // have to provide detailed info about these errors, must use row and col from general node, and properly initialize it
 - whether symbol declared; also not more than once
@@ -11,10 +9,6 @@ to complete the functionalities of expression
 
 structure the program in 4 sections
 
-
-class types are not general types, 
-
-
 done 
 arrays:
 - a[1][2] = expr;
@@ -25,3 +19,5 @@ should use semantic_error for sending messages about errors in the program (symb
 
 still to work on types
 are_types_equal : array comparison 
+
+basic types: bool, char, float, string

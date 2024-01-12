@@ -22,6 +22,8 @@ void Span::set_span_start(Span *other)
 void Span::set_span_end(Span *other)
 {
     end = other->end;
+    if (end.row == 0)
+        end = other->start;
 }
 
 void Span::span_end()
@@ -29,7 +31,7 @@ void Span::span_end()
     end.col = gCol;
     end.row = gRow;
 
-    cout << span_to_string( ) <<endl;
+    cout << span_to_string() << endl;
 }
 
 void Span::set_lines(Span *r1, Span *r2)
@@ -48,6 +50,11 @@ string Span::span_to_string()
         sprintf(buffer + strlen(buffer), "-%u:%u", end.row, end.col);
 
     return buffer;
+}
+
+void Span::print_span()
+{
+    cout << span_to_string() << endl;
 }
 
 Span::~Span()
@@ -230,11 +237,72 @@ ValueNode *Expression::eval_binary_operator()
     }
     if (!t1->type->is_equal(t2->type))
     {
-        semantic_error("different types: at (%s) %s vs at (%s) %s", left->span_to_string().c_str(), t1->type->to_string().c_str(), right->span_to_string().c_str(),t2->type->to_string().c_str());
+        semantic_error("different types: at (%s) %s vs at (%s) %s", left->span_to_string().c_str(), t1->type->to_string().c_str(), right->span_to_string().c_str(), t2->type->to_string().c_str());
+
         return nullptr;
     }
     switch (oper)
     {
+    case OperTypes::LOR:
+    {
+        debug_print("|| ");
+        auto t1_ = dynamic_cast<BoolValue *>(t1);
+        if (!t1_)
+        {
+            semantic_error("doesn't support LOR: at (%s) ", left->span_to_string().c_str());
+            return nullptr;
+        }
+        t1_->lor(t2);
+        break;
+    }
+    case OperTypes::EQ: {
+        BoolValue * temp = new BoolValue("false");
+        temp->value = t1->eq(t2);
+        delete t1; delete t2;
+        return temp;
+    }
+    case OperTypes::NEQ: {
+        BoolValue * temp = new BoolValue("false");
+        temp->value = t1->neq(t2);
+        delete t1; delete t2;
+        return temp;
+    }
+    case OperTypes::LE: {
+        BoolValue * temp = new BoolValue("false");
+        temp->value = t1->le(t2);
+        delete t1; delete t2;
+        return temp;
+    }
+    case OperTypes::LEQ: {
+        BoolValue * temp = new BoolValue("false");
+        temp->value = t1->leq(t2);
+        delete t1; delete t2;
+        return temp;
+    }
+    case OperTypes::GE: {
+        BoolValue * temp = new BoolValue("false");
+        temp->value = t1->ge(t2);
+        delete t1; delete t2;
+        return temp;
+    }
+    case OperTypes::GEQ: {
+        BoolValue * temp = new BoolValue("false");
+        temp->value = t1->geq(t2);
+        delete t1; delete t2;
+        return temp;
+    }
+    case OperTypes::LAND:
+    {
+        debug_print("|| ");
+        auto t1_ = dynamic_cast<BoolValue *>(t1);
+        if (!t1_)
+        {
+            semantic_error("doesn't support LOR: at (%s) ", left->span_to_string().c_str());
+            return nullptr;
+        }
+        t1_->land(t2);
+        break;
+    }
     case OperTypes::SUB:
     {
         debug_print("sub ");
@@ -263,12 +331,6 @@ ValueNode *Expression::eval_binary_operator()
     {
         debug_print("neg");
         t1->neg();
-        break;
-    }
-    case OperTypes::LNOT:
-    {
-        debug_print("!");
-        t1->lnot();
         break;
     }
     default:
@@ -303,7 +365,14 @@ ValueNode *Expression::eval_unary_operator()
     {
     case OperTypes::LNOT:
     {
-        t1->lnot();
+        debug_print("! ");
+        auto t1_ = dynamic_cast<BoolValue *>(t1);
+        if (!t1_)
+        {
+            semantic_error("doesn't support LOR: at (%s) ", left->span_to_string().c_str());
+            return nullptr;
+        }
+        t1_->lnot();
         break;
     }
     case OperTypes::NEG:
@@ -327,7 +396,10 @@ ValueNode *Expression::eval()
         auto temp2 = get_leaf_value();
         if (!temp2)
         {
-            semantic_error("value of %s is unitialized!", get_leaf_id().c_str());
+            string error_span = span_to_string();
+            if (symbol_type && sym && sym->span)
+                error_span = sym->span->span_to_string();
+            semantic_error("at (%s) value of %s is unitialized!", error_span.c_str(), get_leaf_id().c_str());
             return nullptr;
         }
         temp2->copy_to(temp1);
@@ -336,7 +408,7 @@ ValueNode *Expression::eval()
         return temp1;
     }
 
-    if (oper == OperTypes::SUB || oper == OperTypes::ADD || oper == OperTypes::MUL || oper == OperTypes::DIV)
+    if (oper == OperTypes::SUB || oper == OperTypes::ADD || oper == OperTypes::MUL || oper == OperTypes::DIV || oper == OperTypes::LAND || oper == OperTypes::LOR || oper == OperTypes::EQ || oper == OperTypes::NEQ || oper == OperTypes::LE || oper == OperTypes::LEQ || oper == OperTypes::GE || oper == OperTypes::GEQ)
         return eval_binary_operator();
 
     if (oper == OperTypes::LNOT || oper == OperTypes::NEG)
@@ -346,9 +418,13 @@ ValueNode *Expression::eval()
 }
 
 Expression::Expression(OperTypes op, Expression *left, Expression *right)
-{    
+{
     set_span_start(left);
-    set_span_end(right);
+    if (right)
+        set_span_end(right);
+    else
+        set_span_end(left);
+
     this->oper = op;
     this->left = left;
     this->right = right;
@@ -381,17 +457,17 @@ Expression::Expression(Symbol *sym)
     this->sym = sym;
     oper = OperTypes::NONOPERATOR;
     debug_print("before spanned");
-    if(sym->span)
+    if (sym->span)
         set_span(sym->span);
     debug_print("spanned");
 }
 
 Expression::Expression(RawNode *id)
-{ 
+{
     sym = currentSymbolTable->is_symbol_defined_in_path(id->content);
     oper = OperTypes::NONOPERATOR;
     symbol_type = true;
-    
+
     if (!sym)
     {
         semantic_error("%s not declared\n", id->content.c_str());
@@ -661,7 +737,8 @@ FunctionCall::FunctionCall(RawNode *scope_id, Vector *fnname_parameters) : Value
             args->push_back(expr->eval());
         }
     }
-    value = new IntValue("0");
+
+    value = funcnode->return_type->get_associated_value();
 }
 void ArrayIndexing::add_index(Expression *rval)
 {
@@ -927,6 +1004,16 @@ bool IntValue::lnot()
     value *= -1;
     return false;
 }
+bool IntValue::eq(ValueNode *other)
+{
+    auto t2 = dynamic_cast<IntValue *>(other);
+    return this->value == t2->value;
+} 
+bool IntValue::le(ValueNode *other)
+{
+    auto t2 = dynamic_cast<IntValue *>(other);
+    return this->value < t2->value;
+} 
 void IntValue::copy_to(ValueNode *&other)
 {
     auto o = (IntValue *)(other);
@@ -967,6 +1054,17 @@ string IntValue::to_string()
 }
 
 // FLOAT IMPLEMENTATION
+
+bool FloatValue::eq(ValueNode *other)
+{
+    auto t2 = dynamic_cast<FloatValue *>(other);
+    return this->value == t2->value;
+} 
+bool FloatValue::le(ValueNode *other)
+{
+    auto t2 = dynamic_cast<FloatValue *>(other);
+    return this->value < t2->value;
+} 
 
 FloatType::FloatType() : TypeNode(FLOAT)
 {
@@ -1121,8 +1219,8 @@ BoolValue::BoolValue(string number)
 bool BoolValue::add(ValueNode *other)
 {
     auto t2 = dynamic_cast<BoolValue *>(other);
-    this->value += t2->value;
-    return true;
+    return (this->value + t2->value) > 0;
+    
 }
 
 bool BoolValue::mul(ValueNode *other)
@@ -1141,10 +1239,22 @@ bool BoolValue::div(ValueNode *other)
     }
     return true;
 }
+bool BoolValue::lor(ValueNode *other)
+{
+    auto t2 = dynamic_cast<BoolValue *>(other);
+    this->value = this->value || t2->value;
+    return true;
+}
 bool BoolValue::sub(ValueNode *other)
 {
     auto t2 = dynamic_cast<BoolValue *>(other);
     this->value -= t2->value;
+    return true;
+}
+bool BoolValue::land(ValueNode *other)
+{
+    auto t2 = dynamic_cast<BoolValue *>(other);
+    this->value = this->value && t2->value;
     return true;
 }
 bool BoolValue::neg()
@@ -1310,7 +1420,6 @@ AssignResult StringValue::assign(ValueNode *val)
         value = number.substr(1, size - 2);
     else
         value = number;
-    
 
     return AssignResult::OK;
 }

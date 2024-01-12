@@ -27,6 +27,7 @@ public:
 
     Span * span = nullptr;
     void set_span(Span* other);
+    void set_span(Span* start,Span * end);
 };
 
 class SymbolTable

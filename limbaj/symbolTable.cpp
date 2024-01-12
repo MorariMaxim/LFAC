@@ -165,6 +165,13 @@ void Symbol::set_span(Span *other)
     span->set_span(other);
 }
 
+void Symbol::set_span(Span *start, Span *end)
+{
+    span = new Span();
+    span->set_span_start(start);
+    span->set_span_end(end);
+}
+
 SymbolTable::SymbolTable(string name) : name(name)
 {
     visibility = currentVisibility;
@@ -235,13 +242,13 @@ Symbol *SymbolTable::is_symbol_defined_in_path(string name)
 }
 int SymbolTable::declare_symbol(TypeNode *tn, RawNode *id, Expression *value)
 {
-    string name = id->content; 
+    string name = id->content;
 
     if (!tn)
     {
         nullptr_error(" type node was nullptr");
         return 0;
-    } 
+    }
 
     Symbol *symbol = new Symbol();
 
@@ -261,19 +268,18 @@ int SymbolTable::declare_symbol(TypeNode *tn, RawNode *id, Expression *value)
     }
     else
     {
-        if(tn->is_const) {
-            spanned_semantic_error(id,"every constant must be initialized!");
+        if (tn->is_const)
+        {
+            spanned_semantic_error(id, "every constant must be initialized!");
             return false;
         }
         symbol->type = tn;
         symbol->is_init = false;
-
-
     }
 
     symbol->is_const = tn->is_const;
     symbol->name = name;
-    symbol->set_span(id); 
+    symbol->set_span(id);
 
     return insert_symbol(symbol);
 }
@@ -326,6 +332,19 @@ SymbolTable *SymbolTable::add_class(RawNode *gn)
 
 SymbolTable *SymbolTable::addScope(string name)
 {
+    static int for_count = 0;
+    static int while_count = 0;
+    static int if_count = 0;
+
+    if (name == "for")
+        name = name + "()#" + std::to_string(for_count++);
+    else if (name == "while")
+        name = name + "()#" + std::to_string(while_count++);
+    else if (name == "if")
+        name = name + "()#" + std::to_string(if_count++);
+    else if (name == "else")
+        name = name + "()#" + std::to_string(if_count-1);
+
     SymbolTable *newScope = new SymbolTable(name);
     newScope->parent = this;
     if (!insert_symbol(newScope))
@@ -401,7 +420,7 @@ Symbol *SymbolTable::declare_user_symbol(RawNode *classId, RawNode *symbolName, 
 
         if (field == fields->end())
         {
-            printf("no %s field\n", id->content.c_str());
+            spanned_semantic_error(id, "no '%s' field\n", id->content.c_str());
             return nullptr;
         }
 
@@ -475,7 +494,7 @@ bool SymbolTable::insert_symbol(Symbol *sym)
         return false;
     }
 
-    printf("at %s... inserted %s\n", sym->span->span_to_string().c_str(),sym->name.c_str());
+    printf("at %s... inserted %s\n", sym->span->span_to_string().c_str(), sym->name.c_str());
     return true;
 }
 
@@ -517,7 +536,7 @@ bool SymbolTable::assign(RawNode *id, Expression *expr, ArrayIndexing *indexing)
 
     if (!sym)
     {
-        spanned_semantic_error(id,"symbol %s not declared",id->content.c_str());
+        spanned_semantic_error(id, "symbol %s not declared", id->content.c_str());
         return false;
     }
 
@@ -572,7 +591,6 @@ void SymbolTable::set_span(Span *other)
     span->set_span(other);
 }
 
-
 FunctionDetails *SymbolTable::isFuncDefined(string name)
 {
     if (func_details)
@@ -623,7 +641,7 @@ SymbolTable *SymbolTable::addFunction(FunctionDetails *newFunc)
 
     return newScope;
 }
- 
+
 Symbol *SymbolTable::declare_array_symbol(RawNode *id, TypeNode *type, ArrayIndexing *indexing, Expression *init)
 {
     string name = id->content;
@@ -693,7 +711,7 @@ Symbol *SymbolTable::check_member_access(RawNode *id, RawNode *member_id)
 
     if (field == fields->end())
     {
-        printf("no %s member\n", member_id->content.c_str());
+        spanned_semantic_error(id, "no '%s' member\n", member_id->content.c_str());
         return nullptr;
     }
 

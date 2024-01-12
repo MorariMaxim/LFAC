@@ -27,17 +27,17 @@ class Span
 public:
     Position start, end;
 
-    Span(); 
+    Span();
 
     void set_span(Span *other);
     void set_span_start(Span *other);
     void set_span_end(Span *other);
     void span_end();
-    void set_lines(Span * r1, Span * r2);
+    void set_lines(Span *r1, Span *r2);
     string span_to_string();
+    void print_span();
 
     virtual ~Span();
-
 };
 
 class RawNode : public Span
@@ -65,11 +65,12 @@ public:
     void print_parameters();
     void setSignature();
 
-    operator Span*() {
+    operator Span *()
+    {
         return span;
     }
 
-    Span * span = new Span();
+    Span *span = new Span();
 };
 
 enum OperTypes
@@ -80,7 +81,15 @@ enum OperTypes
     MUL,
     DIV,
     NEG,
-    LNOT
+    LNOT,
+    LOR,
+    LAND,
+    EQ,
+    NEQ,
+    LE,
+    LEQ,
+    GE,
+    GEQ
 };
 class TypeNode;
 class ValueNode : public Span
@@ -94,6 +103,13 @@ public:
     virtual bool sub(ValueNode *other) { return false; };
     virtual bool mul(ValueNode *other) { return false; };
     virtual bool div(ValueNode *other) { return false; };
+
+    virtual bool eq(ValueNode *other) { semantic_error("unimplemented"); return false; };
+    virtual bool neq(ValueNode *other) { return ! this->eq(other);  };
+    virtual bool le(ValueNode *other) { semantic_error("unimplemented"); return false; };
+    virtual bool leq(ValueNode *other) { return this->eq(other) || this->le(other); };
+    virtual bool ge(ValueNode *other) { return  ! this->leq(other); };
+    virtual bool geq(ValueNode *other) { return  ! this->le(other); };
 
     virtual bool neg() { return false; };
     virtual bool lnot() { return false; };
@@ -132,6 +148,9 @@ public:
     virtual bool neg() override;
     virtual bool lnot() override;
 
+    virtual bool eq(ValueNode *other) override; 
+    virtual bool le(ValueNode *other) override; 
+
     void print() override;
     string to_string() override;
 
@@ -153,6 +172,9 @@ public:
     virtual bool neg() override;
     virtual bool lnot() override;
 
+    virtual bool eq(ValueNode *other) override; 
+    virtual bool le(ValueNode *other) override; 
+
     void print() override;
     string to_string() override;
 
@@ -171,7 +193,8 @@ public:
     virtual bool sub(ValueNode *other) override;
     virtual bool mul(ValueNode *other) override;
     virtual bool div(ValueNode *other) override;
-
+    bool lor(ValueNode *other);
+    bool land(ValueNode *other);
     virtual bool neg() override;
     virtual bool lnot() override;
 
@@ -328,7 +351,6 @@ public:
     virtual ValueNode *get_associated_value() { return new ValueNode(); };
 
     virtual bool is_equal(TypeNode *other) { return false; };
-    
 };
 
 class FloatType : public TypeNode
@@ -440,10 +462,11 @@ public:
     Expression(OperTypes op, Expression *left, Expression *right);
     Expression(ValueNode *vn);
     Expression(Symbol *sym);
-    Expression(RawNode * id);
+    Expression(RawNode *id);
     virtual ~Expression();
 
     TypeNode *type();
+
     ValueNode *get_leaf_value(); // only if leaf node
     TypeNode *get_leaf_type();
     string get_leaf_id();
@@ -456,4 +479,3 @@ public:
 };
 
 #endif
-

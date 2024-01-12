@@ -1,9 +1,23 @@
-float x = 12.0;
+CLASS_SECTION
+class test { 
+}
+GLOBAL_VARIABLES
+int x;
 
-int u = 2;
+GLOBAL_FUNCTIONS
+fn func() {
+    int x = 10;
 
-eval ( ((u + u) + (u*2))  * x ) ;
+    eval (x * 3);
+}
 
+MAIN_FUNCTION
+fn main() {
+
+    float x = 11.0;
+    float y = 11.1;
+    eval (x < y);
+}
 # 
 class Person {
 private:
