@@ -1,8 +1,6 @@
 #include "symbolTable.h"
 #include "GeneralInfo.h"
 
-#define symbol_not_declared(s) printf("variable %s not declared\n", s.c_str());
-
 void nullptr_error(string s)
 {
     printf("a pointer was null when unexpected; %s\n", s.c_str());
@@ -13,7 +11,13 @@ void nullptr_error(string s)
         for (int i = 0; i < x; i++) \
             printf("  ");           \
     }
-
+string indent_string(int x)
+{
+    string temp = "";
+    for (int i = 0; i < x; i++)
+        temp += "  ";
+    return temp;
+}
 void printType(types type)
 {
     switch (type)
@@ -101,11 +105,15 @@ string Symbol::to_string()
 {
     string temp = "";
 
+    if (is_const)
+        temp += "const ";
     if (type)
-        temp += type->to_string() + " " + name;
+        temp += type->to_string() + " ";
+    temp += name;
     if (value)
         temp += " = " + value->to_string();
-
+    if (temp == "")
+        return "fail";
     return temp;
 }
 
@@ -190,32 +198,41 @@ string SymbolTable::getFullPath()
     return fullPath;
 }
 
-void SymbolTable::printTable(int depth)
+void SymbolTable::printTable()
 {
-    indent(depth);
+    cout << to_string();
+}
+
+string SymbolTable::to_string(int depth)
+{
+    string table = "";
+    table += indent_string(depth);
     if (func_details)
-        printf("%s\n", func_details->signature.c_str());
+        table += func_details->signature+"\n";
+    else if (type == scopeType::CLASS_SCOPE)
+        table += "class " + this->name+"\n";
     else
-        printf("%s\n", this->name.c_str());
+        table += this->name+"\n";
 
     for (auto &child : classes)
     {
-        child.second->printTable(depth + 1);
+        table += child.second->to_string(depth + 1);
     }
     for (auto &child : functions)
     {
-        child.second->printTable(depth + 1);
+        table += child.second->to_string(depth + 1);
     }
     for (auto &child : other)
     {
-        child.second->printTable(depth + 1);
+        table += child.second->to_string(depth + 1);
     }
     for (auto &symbol : symbols)
     {
-        indent(depth + 1);
+        table += indent_string(depth + 1);
 
-        symbol.second->print();
+        table += symbol.second->to_string()+"\n";
     }
+    return table;
 }
 
 Symbol *SymbolTable::is_symbol_defined_in_path(string name)
@@ -251,6 +268,7 @@ int SymbolTable::declare_symbol(TypeNode *tn, RawNode *id, Expression *value)
     }
 
     Symbol *symbol = new Symbol();
+    symbol->type = tn;
 
     if (value)
     {
@@ -262,19 +280,15 @@ int SymbolTable::declare_symbol(TypeNode *tn, RawNode *id, Expression *value)
             return false;
         }
         printf("assigning %s to %s\n", res->to_string().c_str(), name.c_str());
+        delete symbol->type;
         symbol->type = res->type;
         symbol->value = res;
         symbol->is_init = true;
     }
-    else
+    else if (tn->is_const)
     {
-        if (tn->is_const)
-        {
-            spanned_semantic_error(id, "every constant must be initialized!");
-            return false;
-        }
-        symbol->type = tn;
-        symbol->is_init = false;
+        spanned_semantic_error(id, "every constant must be initialized!");
+        return false;
     }
 
     symbol->is_const = tn->is_const;
@@ -343,7 +357,7 @@ SymbolTable *SymbolTable::addScope(string name)
     else if (name == "if")
         name = name + "()#" + std::to_string(if_count++);
     else if (name == "else")
-        name = name + "()#" + std::to_string(if_count-1);
+        name = name + "()#" + std::to_string(if_count - 1);
 
     SymbolTable *newScope = new SymbolTable(name);
     newScope->parent = this;
@@ -398,13 +412,16 @@ Symbol *SymbolTable::declare_user_symbol(RawNode *classId, RawNode *symbolName, 
         printf("invalid initialization seuqence, odd size\n");
         return nullptr;
     }
+    debug_print("here\n");
 
     auto type = dynamic_cast<ClassType *>(sym->type);
 
     if (sym->value)
         delete sym->value;
 
+    debug_print("before class object\n");
     auto object = new ClassObject(type);
+    debug_print("here\n");
     sym->value = object;
 
     auto fields = &object->fields;
@@ -494,7 +511,7 @@ bool SymbolTable::insert_symbol(Symbol *sym)
         return false;
     }
 
-    printf("at %s... inserted %s\n", sym->span->span_to_string().c_str(), sym->name.c_str());
+    printf("at %s... inserted %s, name = %s\n", sym->span->span_to_string().c_str(), sym->to_string().c_str(), sym->name.c_str());
     return true;
 }
 
@@ -523,7 +540,7 @@ ValueNode *SymbolTable::symbol_indexing(RawNode *id, ArrayIndexing *indexing)
 
     if (!sym)
     {
-        printf("symbol %s not declared", id->content.c_str());
+        semantic_error("symbol %s not declared", id->content.c_str());
         return nullptr;
     }
 
@@ -623,7 +640,7 @@ SymbolTable *SymbolTable::addFunction(FunctionDetails *newFunc)
 
     auto res = functions.emplace(newScope->name, newScope);
 
-    if (!res.second)
+    if (!res.second && functions[newFunc->name]->func_details->defined)
     {
         if ((*res.first).second->span)
         {

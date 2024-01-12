@@ -38,6 +38,10 @@ int treat_helper(int type) {
             case EVAL:
             print_token("EVAL");gCol+=yyleng; return EVAL;
             break;
+            case TYPEOF:
+            print_token("TYPEOF");gCol+=yyleng; return TYPEOF;
+            break;
+            
 
             case BTYPE:
             print_token("type"); yylval.TypeNode = new TypeNode(yytext); gCol+=yyleng; return BTYPE; 
@@ -141,6 +145,7 @@ int treat_helper(int type) {
 "else" {treat_macro(ELSE);}
 "const" {treat_macro(CONST);}
 "eval"  {treat_macro(EVAL);}
+"typeof"  {treat_macro(TYPEOF);}
 "||" {treat_macro(LORT);}
 "&&" {treat_macro(LANDT);}
 "!" {treat_macro(LNOTT);}
@@ -167,8 +172,8 @@ int treat_helper(int type) {
 
 
 
-[-+]?[0-9]+ {treat_macro(INTVAL);}
-[-+]?[0-9]+\.[0-9]+ {treat_macro(FLOATVAL)}
+[0-9]+ {treat_macro(INTVAL);}
+[0-9]+\.[0-9]+ {treat_macro(FLOATVAL)}
 true|false {treat_macro(BOOLVAL)}
 
 [a-zA-Z][a-zA-Z0-9]* {treat_macro(ID);} 

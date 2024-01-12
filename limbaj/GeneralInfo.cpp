@@ -30,8 +30,6 @@ void Span::span_end()
 {
     end.col = gCol;
     end.row = gRow;
-
-    cout << span_to_string() << endl;
 }
 
 void Span::set_lines(Span *r1, Span *r2)
@@ -74,7 +72,7 @@ void debug_print(string s)
 
 void symbol_not_declared(string s)
 {
-    printf("%s is not declared\n", s.c_str());
+    semantic_error("%s is not declared\n", s.c_str());
 }
 
 inline types str_2_type(string str)
@@ -181,17 +179,17 @@ void print_token(string str, Colours col)
         this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 bool Expression::are_types_equal(TypeNode *t1, TypeNode *t2)
-{
+{ 
     if (!t1 || !t2)
     {
         debug_print("one is null\n");
         return false;
-    }
+    }  
     if (!t1->is_equal(t2))
-    {
+    { 
         unequal_types_error(t1, t2);
         return false;
-    }
+    } 
     return true;
 }
 
@@ -255,40 +253,52 @@ ValueNode *Expression::eval_binary_operator()
         t1_->lor(t2);
         break;
     }
-    case OperTypes::EQ: {
-        BoolValue * temp = new BoolValue("false");
+    case OperTypes::EQ:
+    {
+        BoolValue *temp = new BoolValue("false");
         temp->value = t1->eq(t2);
-        delete t1; delete t2;
+        delete t1;
+        delete t2;
         return temp;
     }
-    case OperTypes::NEQ: {
-        BoolValue * temp = new BoolValue("false");
+    case OperTypes::NEQ:
+    {
+        BoolValue *temp = new BoolValue("false");
         temp->value = t1->neq(t2);
-        delete t1; delete t2;
+        delete t1;
+        delete t2;
         return temp;
     }
-    case OperTypes::LE: {
-        BoolValue * temp = new BoolValue("false");
+    case OperTypes::LE:
+    {
+        BoolValue *temp = new BoolValue("false");
         temp->value = t1->le(t2);
-        delete t1; delete t2;
+        delete t1;
+        delete t2;
         return temp;
     }
-    case OperTypes::LEQ: {
-        BoolValue * temp = new BoolValue("false");
+    case OperTypes::LEQ:
+    {
+        BoolValue *temp = new BoolValue("false");
         temp->value = t1->leq(t2);
-        delete t1; delete t2;
+        delete t1;
+        delete t2;
         return temp;
     }
-    case OperTypes::GE: {
-        BoolValue * temp = new BoolValue("false");
+    case OperTypes::GE:
+    {
+        BoolValue *temp = new BoolValue("false");
         temp->value = t1->ge(t2);
-        delete t1; delete t2;
+        delete t1;
+        delete t2;
         return temp;
     }
-    case OperTypes::GEQ: {
-        BoolValue * temp = new BoolValue("false");
+    case OperTypes::GEQ:
+    {
+        BoolValue *temp = new BoolValue("false");
         temp->value = t1->geq(t2);
-        delete t1; delete t2;
+        delete t1;
+        delete t2;
         return temp;
     }
     case OperTypes::LAND:
@@ -340,7 +350,7 @@ ValueNode *Expression::eval_binary_operator()
     debug_print("return ");
     return t1;
 }
-ValueNode *Expression::eval_wrapper()
+ValueNode *Expression::eval_wrapper(bool mode)
 {
     debug_print("going to eval expression");
 
@@ -348,7 +358,12 @@ ValueNode *Expression::eval_wrapper()
     debug_print("out");
 
     if (t)
-        t->print();
+    {
+        if (mode)
+            t->print();
+        else
+            printf("%s", t->type->to_string().c_str());
+    }
     else
     {
         semantic_error("coulnd't evaluate expression");
@@ -392,9 +407,8 @@ ValueNode *Expression::eval()
 
     if (oper == NONOPERATOR)
     {
-        ValueNode *temp1;
-        auto temp2 = get_leaf_value();
-        if (!temp2)
+        auto temp = get_leaf_value();
+        if (!temp)
         {
             string error_span = span_to_string();
             if (symbol_type && sym && sym->span)
@@ -402,10 +416,11 @@ ValueNode *Expression::eval()
             semantic_error("at (%s) value of %s is unitialized!", error_span.c_str(), get_leaf_id().c_str());
             return nullptr;
         }
-        temp2->copy_to(temp1);
-        temp2->print();
         debug_print("leaf node");
-        return temp1;
+
+        ValueNode *temp2;
+        temp->copy_to(temp2);
+        return temp2;
     }
 
     if (oper == OperTypes::SUB || oper == OperTypes::ADD || oper == OperTypes::MUL || oper == OperTypes::DIV || oper == OperTypes::LAND || oper == OperTypes::LOR || oper == OperTypes::EQ || oper == OperTypes::NEQ || oper == OperTypes::LE || oper == OperTypes::LEQ || oper == OperTypes::GE || oper == OperTypes::GEQ)
@@ -456,10 +471,8 @@ Expression::Expression(Symbol *sym)
     symbol_type = true;
     this->sym = sym;
     oper = OperTypes::NONOPERATOR;
-    debug_print("before spanned");
     if (sym->span)
         set_span(sym->span);
-    debug_print("spanned");
 }
 
 Expression::Expression(RawNode *id)
@@ -555,13 +568,14 @@ FunctionDetails::FunctionDetails(string name, TypeNode *ret_type, Vector *pars) 
     return_type = ret_type;
 
     if (!ret_type)
-    {
+    { 
         return_type = new TypeNode(types::VOID);
     }
 
     this->name = name;
 
-    return_type->print();
+    debug_print("return ttype is : ");
+    printf("%s", return_type->to_string().c_str());
 }
 
 FunctionDetails::~FunctionDetails()
@@ -595,15 +609,16 @@ void FunctionDetails::check_return_type()
             return;
         semantic_error("at line %d.. expected a return value as return type is not void", start.row);
         return;
-    }
-
+    } 
     auto val = gReturnExpr->eval();
+    delete gReturnExpr;
+    gReturnExpr = nullptr;
     auto type = val->type;
-
+ 
     if (!Expression::are_types_equal(type, return_type))
-    {
+    { 
         semantic_error("at line %d..mismatchd return types: %s vs %s", gTempSpan.start.row, type->to_string().c_str(), return_type->to_string().c_str());
-    }
+    } 
 }
 
 void FunctionDetails::print_parameters()
@@ -648,7 +663,7 @@ bool FunctionCall::checkCall()
     if (((parameters == nullptr) && (args->size() != 0)) ||
         ((parameters != nullptr) && (args->size() != parameters->size())))
     {
-        printf("((parameters == nullptr) && (args->size() != 0)) || ((parameters != nullptr) && (args->size() != parameters->size()))\n");
+        semantic_error("not enoough parameters\n");
         return false;
     }
 
@@ -662,7 +677,7 @@ bool FunctionCall::checkCall()
         }
         if (!Expression::are_types_equal((*args)[i]->type, (*parameters)[i]->type))
         {
-            printf("args[%d].type (%s) != pars[%d].type (%s)\n", i, types_2_str((*args)[i]->type->type).c_str(), i, types_2_str((*parameters)[i]->type->type).c_str());
+            semantic_error("args[%d].type (%s) != pars[%d].type (%s)\n", i, types_2_str((*args)[i]->type->type).c_str(), i, types_2_str((*parameters)[i]->type->type).c_str());
             return false;
         }
     }
@@ -717,7 +732,7 @@ FunctionCall::FunctionCall(RawNode *scope_id, Vector *fnname_parameters) : Value
 
     if (funcnode->return_type)
     {
-        this->type = funcnode->return_type;
+        funcnode->return_type->copy_to(this->type);
     }
 
     function_name = funcnode;
@@ -1008,12 +1023,12 @@ bool IntValue::eq(ValueNode *other)
 {
     auto t2 = dynamic_cast<IntValue *>(other);
     return this->value == t2->value;
-} 
+}
 bool IntValue::le(ValueNode *other)
 {
     auto t2 = dynamic_cast<IntValue *>(other);
     return this->value < t2->value;
-} 
+}
 void IntValue::copy_to(ValueNode *&other)
 {
     auto o = (IntValue *)(other);
@@ -1059,12 +1074,12 @@ bool FloatValue::eq(ValueNode *other)
 {
     auto t2 = dynamic_cast<FloatValue *>(other);
     return this->value == t2->value;
-} 
+}
 bool FloatValue::le(ValueNode *other)
 {
     auto t2 = dynamic_cast<FloatValue *>(other);
     return this->value < t2->value;
-} 
+}
 
 FloatType::FloatType() : TypeNode(FLOAT)
 {
@@ -1220,7 +1235,6 @@ bool BoolValue::add(ValueNode *other)
 {
     auto t2 = dynamic_cast<BoolValue *>(other);
     return (this->value + t2->value) > 0;
-    
 }
 
 bool BoolValue::mul(ValueNode *other)
@@ -1266,6 +1280,16 @@ bool BoolValue::lnot()
 {
     value = !value;
     return true;
+}
+bool BoolValue::eq(ValueNode *other)
+{
+    auto t2 = dynamic_cast<BoolValue *>(other);
+    return this->value == t2->value;
+}
+bool BoolValue::le(ValueNode *other)
+{
+    auto t2 = dynamic_cast<BoolValue *>(other);
+    return this->value < t2->value;
 }
 void BoolValue::copy_to(ValueNode *&other)
 {
@@ -1380,6 +1404,16 @@ bool StringValue::lnot()
 {
     // value = !value;
     return true;
+}
+bool StringValue::eq(ValueNode *other)
+{
+    auto t2 = dynamic_cast<StringValue *>(other);
+    return this->value == t2->value;
+}
+bool StringValue::le(ValueNode *other)
+{
+    auto t2 = dynamic_cast<StringValue *>(other);
+    return this->value.compare(t2->value) < 0;
 }
 void StringValue::copy_to(ValueNode *&other)
 {
@@ -1517,6 +1551,16 @@ bool CharValue::lnot()
     value *= -1;
     return true;
 }
+bool CharValue::eq(ValueNode *other)
+{
+    auto t2 = dynamic_cast<CharValue *>(other);
+    return this->value == t2->value;
+}
+bool CharValue::le(ValueNode *other)
+{
+    auto t2 = dynamic_cast<CharValue *>(other);
+    return this->value < t2->value;
+}
 void CharValue::copy_to(ValueNode *&other)
 {
     auto o = (CharValue *)(other);
@@ -1561,8 +1605,16 @@ string CharValue::to_string()
 ClassObject::ClassObject(ClassType *ct)
 {
     type = ct;
+
+    if (!ct || !ct->clas)
+        debug_print("one of three is null\n");
+
     for (auto &field : ct->clas->symbols)
     {
+        debug_print("iteration\n");
+        if (!field.second)
+            debug_print("field second is nullt\n");
+        printf("%s; %s\n", field.first.c_str(), field.second->to_string().c_str());
         fields[field.first] = new Symbol(field.second);
     }
 }

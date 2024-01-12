@@ -68,29 +68,30 @@ extern int yydebug;
     RETURN = 269,                  /* RETURN  */
     CLASS = 270,                   /* CLASS  */
     EVAL = 271,                    /* EVAL  */
-    CLASS_SECTION = 272,           /* CLASS_SECTION  */
-    GLOBAL_FUNCTIONS = 273,        /* GLOBAL_FUNCTIONS  */
-    GLOBAL_VARIABLES = 274,        /* GLOBAL_VARIABLES  */
-    MAIN_FUNCTION = 275,           /* MAIN_FUNCTION  */
-    LORT = 276,                    /* LORT  */
-    LANDT = 277,                   /* LANDT  */
-    LNOTT = 278,                   /* LNOTT  */
-    EQT = 279,                     /* EQT  */
-    NEQT = 280,                    /* NEQT  */
-    LEQT = 281,                    /* LEQT  */
-    GEQT = 282,                    /* GEQT  */
-    BTYPE = 283,                   /* BTYPE  */
-    FLOAT_TYPE = 284,              /* FLOAT_TYPE  */
-    INT_TYPE = 285,                /* INT_TYPE  */
-    BOOL_TYPE = 286,               /* BOOL_TYPE  */
-    STRING_TYPE = 287,             /* STRING_TYPE  */
-    CHAR_TYPE = 288,               /* CHAR_TYPE  */
-    INTVAL = 289,                  /* INTVAL  */
-    FLOATVAL = 290,                /* FLOATVAL  */
-    BOOLVAL = 291,                 /* BOOLVAL  */
-    STRINGVAL = 292,               /* STRINGVAL  */
-    CHARVAL = 293,                 /* CHARVAL  */
-    UMINUS = 294                   /* UMINUS  */
+    TYPEOF = 272,                  /* TYPEOF  */
+    CLASS_SECTION = 273,           /* CLASS_SECTION  */
+    GLOBAL_FUNCTIONS = 274,        /* GLOBAL_FUNCTIONS  */
+    GLOBAL_VARIABLES = 275,        /* GLOBAL_VARIABLES  */
+    MAIN_FUNCTION = 276,           /* MAIN_FUNCTION  */
+    LORT = 277,                    /* LORT  */
+    LANDT = 278,                   /* LANDT  */
+    LNOTT = 279,                   /* LNOTT  */
+    EQT = 280,                     /* EQT  */
+    NEQT = 281,                    /* NEQT  */
+    LEQT = 282,                    /* LEQT  */
+    GEQT = 283,                    /* GEQT  */
+    BTYPE = 284,                   /* BTYPE  */
+    FLOAT_TYPE = 285,              /* FLOAT_TYPE  */
+    INT_TYPE = 286,                /* INT_TYPE  */
+    BOOL_TYPE = 287,               /* BOOL_TYPE  */
+    STRING_TYPE = 288,             /* STRING_TYPE  */
+    CHAR_TYPE = 289,               /* CHAR_TYPE  */
+    INTVAL = 290,                  /* INTVAL  */
+    FLOATVAL = 291,                /* FLOATVAL  */
+    BOOLVAL = 292,                 /* BOOLVAL  */
+    STRINGVAL = 293,               /* STRINGVAL  */
+    CHARVAL = 294,                 /* CHARVAL  */
+    UMINUS = 295                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -99,7 +100,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 40 "limbaj.y"
+#line 37 "limbaj.y"
 
     class Span * spanned;    
     class RawNode* node; 
@@ -118,7 +119,7 @@ union YYSTYPE
     class ValueNode * value_node;
     class ArrayValue * array_value_node; 
 
-#line 122 "limbaj.tab.h"
+#line 123 "limbaj.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

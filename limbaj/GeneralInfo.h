@@ -56,6 +56,7 @@ class FunctionDetails : public RawNode
 public:
     string name;
     string signature;
+    bool defined = false;
     vector<Symbol *> *parameters;
     TypeNode *return_type;
     FunctionDetails(string name, TypeNode *ret_type, Vector *pars);
@@ -118,7 +119,7 @@ public:
 
     virtual string to_string()
     {
-        semantic_error("uninitialized variable");
+        semantic_error("unimplemented ");
         return "";
     };
 
@@ -198,6 +199,9 @@ public:
     virtual bool neg() override;
     virtual bool lnot() override;
 
+    virtual bool eq(ValueNode *other) override; 
+    virtual bool le(ValueNode *other) override; 
+
     void print() override;
     string to_string() override;
 
@@ -219,6 +223,9 @@ public:
 
     virtual bool neg() override;
     virtual bool lnot() override;
+
+    virtual bool eq(ValueNode *other) override; 
+    virtual bool le(ValueNode *other) override; 
 
     void print() override;
     string to_string() override;
@@ -242,6 +249,9 @@ public:
 
     virtual bool neg() override;
     virtual bool lnot() override;
+
+    virtual bool eq(ValueNode *other) override; 
+    virtual bool le(ValueNode *other) override; 
 
     void print() override;
     string to_string() override;
@@ -268,6 +278,7 @@ public:
 
     bool NEG() { return true; };
     bool neg() { return true; };
+ 
 
     void print()
     {
@@ -339,6 +350,7 @@ public:
     TypeNode(string str);
 
     virtual string to_string() { return types_2_str(type); };
+    virtual void print() { cout<<to_string()<<endl; }
     virtual void copy_to(TypeNode *&other)
     {
         auto o = (TypeNode *)(other);
@@ -472,7 +484,7 @@ public:
     string get_leaf_id();
     static bool are_types_equal(TypeNode *t1, TypeNode *t2);
 
-    ValueNode *eval_wrapper();
+    ValueNode *eval_wrapper(bool mode);
     ValueNode *eval();
     ValueNode *eval_binary_operator();
     ValueNode *eval_unary_operator();

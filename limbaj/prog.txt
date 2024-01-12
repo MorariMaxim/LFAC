@@ -1,56 +1,23 @@
 CLASS_SECTION
-class test { 
-}
-GLOBAL_VARIABLES
-int x;
-
-GLOBAL_FUNCTIONS
-fn func() {
-    int x = 10;
-
-    eval (x * 3);
-}
-
-MAIN_FUNCTION
-fn main() {
-
-    float x = 11.0;
-    float y = 11.1;
-    eval (x < y);
-}
-# 
 class Person {
 private:
     int a;
     int b;
-public:
-    fn printFields() -> void {
-        
+    fn func1(int a, int x, float b ) -> string {
+        return "a" ;
     }
-    fn as212cw231() -> void {
-        
-    } 
-private:
-    int x;
-    int c;
-public:
 }
+GLOBAL_VARIABLES
 
-fn func1(int a, int x, float b ) -> int {
-    int x;
-    float a; 
-    func1(a,x,b);
-    return x
-}
+GLOBAL_FUNCTIONS
 
-class test {
-    int a;    
-}
 
-test x( a : 10);
 
-int a = 10;
+MAIN_FUNCTION
+fn main() { 
 
-eval ( 1 + 2 * 4 + a);
+    char c = 'a';
+    Person a(a:2);
 
-#
+    eval (c );
+}  
