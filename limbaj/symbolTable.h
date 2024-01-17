@@ -55,6 +55,7 @@ public:
     SymbolTable *getParent();
     string getFullPath();
     void printTable();
+    void printTable(string path);
     string to_string(int depth = 0);
     Symbol *is_symbol_defined_in_path(string name);
     Symbol *isLocallyDefined(string name);

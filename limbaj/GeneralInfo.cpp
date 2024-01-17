@@ -61,14 +61,7 @@ Span::~Span()
 int debug_count = 0;
 
 #define unequal_types_error(t1, t2) semantic_error("different types.. %s vs %s", t1->to_string().c_str(), t2->to_string().c_str())
-void debug_print(string s)
-{
-    int debug = 1;
-
-    if (debug)
-        printf("[%d] %s\n", debug_count++, s.c_str());
-    fflush(stdout);
-}
+ 
 
 void symbol_not_declared(string s)
 {
@@ -158,7 +151,7 @@ string col_2_ansi(Colours col)
 void print_reduction(string str)
 {
 
-    static int debug = 1, delay = 0;
+    static int debug = 0, delay = 0;
     if (debug)
     {
         printf("\033[38;5;31m\n%s\n\033[0m", str.c_str());
@@ -169,7 +162,7 @@ void print_reduction(string str)
 }
 void print_token(string str, Colours col)
 {
-    static int debug = 1, delay = 0;
+    static int debug = 0, delay = 0;
     if (debug)
     {
         printf("\033[38;5;%sm%s\033[0m", col_2_ansi(col).c_str(), str.c_str());
@@ -464,7 +457,7 @@ Expression::Expression(Symbol *sym)
 {
     if (!sym)
     {
-        printf("error during run time, being passed a nullptr symbol");
+        semantic_error("error during run time, being passed a nullptr symbol");
 
         return;
     }
@@ -551,7 +544,7 @@ ValueNode *Expression::get_leaf_value()
 }
 FunctionDetails::FunctionDetails(string name, TypeNode *ret_type, Vector *pars) : RawNode("")
 {
-    printf("func name = %s\n", name.c_str());
+    debug_print("func name = %s\n", name.c_str());
     parameters = new vector<Symbol *>();
     fflush(stdout);
     if (pars)
@@ -575,7 +568,7 @@ FunctionDetails::FunctionDetails(string name, TypeNode *ret_type, Vector *pars) 
     this->name = name;
 
     debug_print("return ttype is : ");
-    printf("%s", return_type->to_string().c_str());
+    debug_print("%s", return_type->to_string().c_str());
 }
 
 FunctionDetails::~FunctionDetails()
@@ -654,7 +647,7 @@ bool FunctionCall::checkCall()
 {
     if (function_name == nullptr)
     {
-        printf("name == nulptr\n");
+        debug_print("name == nulptr\n");
         return false;
     }
 
@@ -672,7 +665,7 @@ bool FunctionCall::checkCall()
     {
         if ((*args)[i] == nullptr)
         {
-            printf("%dth. arg is nullptr\n", i + 1);
+            semantic_error("%dth. arg is nullptr\n", i + 1);
             return false;
         }
         if (!Expression::are_types_equal((*args)[i]->type, (*parameters)[i]->type))
@@ -695,7 +688,7 @@ FunctionCall::FunctionCall(RawNode *scope_id, Vector *fnname_parameters) : Value
 
         if (!sym)
         {
-            printf("variable %s not decalred\n", scope_id->content.c_str());
+            semantic_error("variable %s not decalred\n", scope_id->content.c_str());
             return;
         }
         else
@@ -703,7 +696,7 @@ FunctionCall::FunctionCall(RawNode *scope_id, Vector *fnname_parameters) : Value
             auto clas = dynamic_cast<ClassType *>(sym->type);
             if (!clas)
             {
-                printf("cannot treat %s's type as class type\n", sym->name.c_str());
+                semantic_error("cannot treat %s's type as class type\n", sym->name.c_str());
             }
             scope = clas->clas;
         }
@@ -711,7 +704,7 @@ FunctionCall::FunctionCall(RawNode *scope_id, Vector *fnname_parameters) : Value
 
     if (!fnname_parameters)
     {
-        printf("for some reason fnname_parameters is null");
+        semantic_error("for some reason fnname_parameters is null");
         return;
     }
 
@@ -724,11 +717,11 @@ FunctionCall::FunctionCall(RawNode *scope_id, Vector *fnname_parameters) : Value
 
     if (funcnode == nullptr)
     {
-        printf("found no such function\n");
+        semantic_error("found no such '%s' function\n",fn_name->content.c_str());
         return;
     }
     else
-        printf("found such function\n");
+        debug_print("found such function\n");
 
     if (funcnode->return_type)
     {
@@ -789,7 +782,7 @@ ArrayIndexing::ArrayIndexing(RawNode *arr)
     auto convert = dynamic_cast<ArrayType *>(sym->type);
     if (!convert)
     {
-        printf("%s is not an ArrayType\n", arr->content.c_str());
+        semantic_error("%s is not an ArrayType\n", arr->content.c_str());
         array = nullptr;
     }
     else
@@ -811,12 +804,12 @@ bool ArrayIndexing::check_indexes()
         return true;
     }
 
-    printf("indexes : ");
+    debug_print("indexes : ");
     for (auto v : *indexes)
     {
         v->print();
     }
-    printf("\n");
+    debug_print("\n");
 
     ArrayType *current_dimension = dynamic_cast<ArrayType *>(array->type);
 
@@ -864,7 +857,7 @@ ArrayType::ArrayType(TypeNode *type, ArrayIndexing *arindex) : TypeNode(types::A
 {
     if (!arindex || !type || !arindex->indexes || arindex->indexes->size() == 0)
     {
-        printf("a paramenter null in ArrayType constructor");
+        semantic_error("a paramenter null in ArrayType constructor");
         return;
     }
     int dimensions = arindex->indexes->size();
@@ -976,7 +969,7 @@ IntValue::IntValue(string number)
 {
     type = new IntType();
     value = atoi(number.c_str());
-    printf("new int with value = %d\n", value);
+    debug_print("new int with value = %d\n", value);
 }
 
 bool IntValue::add(ValueNode *other)
@@ -1044,7 +1037,7 @@ ValueNode *IntValue::at(ArrayIndexing *ai, int start_index)
     if (indx_size == start_index)
         return this;
 
-    printf("not an array\n");
+    semantic_error("not an array\n");
     return nullptr;
 }
 AssignResult IntValue::assign(ValueNode *val)
@@ -1112,7 +1105,7 @@ FloatValue::FloatValue(string number)
 {
     type = new FloatType();
     value = atof(number.c_str());
-    printf("new float with value = %f\n", value);
+    debug_print("new float with value = %f\n", value);
 }
 
 bool FloatValue::add(ValueNode *other)
@@ -1170,7 +1163,7 @@ ValueNode *FloatValue::at(ArrayIndexing *ai, int start_index)
     if (indx_size == start_index)
         return this;
 
-    printf("not an array\n");
+    semantic_error("not an array\n");
     return nullptr;
 }
 AssignResult FloatValue::assign(ValueNode *val)
@@ -1228,7 +1221,7 @@ BoolValue::BoolValue(string number)
     type = new BoolType();
     value = (number == "true") ? true : false;
 
-    printf("new bool with value = %s\n", value ? "true" : "false");
+    debug_print("new bool with value = %s\n", value ? "true" : "false");
 }
 
 bool BoolValue::add(ValueNode *other)
@@ -1306,7 +1299,7 @@ ValueNode *BoolValue::at(ArrayIndexing *ai, int start_index)
     if (indx_size == start_index)
         return this;
 
-    printf("not an array\n");
+    semantic_error("not an array\n");
     return nullptr;
 }
 AssignResult BoolValue::assign(ValueNode *val)
@@ -1368,7 +1361,7 @@ StringValue::StringValue(string number)
     else
         value = number;
 
-    printf("new string with value = %s\n", value.c_str());
+    debug_print("new string with value = %s\n", value.c_str());
 }
 
 bool StringValue::add(ValueNode *other)
@@ -1434,7 +1427,7 @@ ValueNode *StringValue::at(ArrayIndexing *ai, int start_index)
 
     if (!convert || convert->value < 0 || indx_size != (start_index + 1) || convert->value >= (int)value.size())
     {
-        printf("index out of bounds");
+        semantic_error("index out of bounds");
         return nullptr;
     }
 
@@ -1504,13 +1497,13 @@ CharValue::CharValue(string number)
     else
         value = ' ';
 
-    printf("new char with value = %c\n", value);
+    debug_print("new char with value = %c\n", value);
 }
 CharValue::CharValue(char character)
 {
     type = new CharType();
     value = character;
-    printf("new char with value = %c\n", value);
+    debug_print("new char with value = %c\n", value);
 }
 bool CharValue::add(ValueNode *other)
 {
@@ -1576,7 +1569,7 @@ ValueNode *CharValue::at(ArrayIndexing *ai, int start_index)
     if (indx_size == start_index)
         return this;
 
-    printf("not an array\n");
+    semantic_error("not an array\n");
     return nullptr;
 }
 AssignResult CharValue::assign(ValueNode *val)
@@ -1614,7 +1607,7 @@ ClassObject::ClassObject(ClassType *ct)
         debug_print("iteration\n");
         if (!field.second)
             debug_print("field second is nullt\n");
-        printf("%s; %s\n", field.first.c_str(), field.second->to_string().c_str());
+        debug_print("%s; %s\n", field.first.c_str(), field.second->to_string().c_str());
         fields[field.first] = new Symbol(field.second);
     }
 }
@@ -1671,7 +1664,7 @@ ArrayValue::ArrayValue(ArrayType *at)
 
     if (!at)
     {
-        printf("arraytyppe is null, cant construct arrayvalue");
+        semantic_error("arraytyppe is null, cant construct arrayvalue");
         return;
     }
 
@@ -1792,7 +1785,7 @@ ValueNode *ArrayValue::at(ArrayIndexing *ai, int start_index)
     auto convert = dynamic_cast<IntValue *>(ai->indexes->at(start_index));
     if (!convert || convert->value < 0 || convert->value >= els_size)
     {
-        printf("index out of bounds");
+        semantic_error("index out of bounds");
         return nullptr;
     }
 

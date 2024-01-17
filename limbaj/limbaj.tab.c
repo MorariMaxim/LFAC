@@ -2398,6 +2398,6 @@ int main(int argc, char** argv){
         yyin = fopen(argv[1], "r");    
         yyparse(); 
 
-        rootSymbolTable->printTable();
+        rootSymbolTable->printTable("table.txt");
 }
 

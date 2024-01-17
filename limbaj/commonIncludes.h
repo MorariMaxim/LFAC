@@ -68,7 +68,7 @@ extern int gCol;
 extern SymbolTable *rootSymbolTable;
 extern SymbolTable *currentSymbolTable;
 extern vector<int> arrayStack;
-extern TypeNode *arrayType; 
+extern TypeNode *arrayType;
 extern Expression *gReturnExpr;
 extern visibilityType currentVisibility;
 extern bool ignore_after_return_statement;
@@ -96,4 +96,16 @@ class RawNode;
             printf("\033[38;5;196mat %s...", span->span_to_string().c_str()); \
         semantic_error(message, ##__VA_ARGS__);                               \
     }
+
+#define debug_print(message, ...)                                                                        \
+    do                                                                                                      \
+    {                                                                                                       \
+        int debug_option = 0;                                                                               \
+        if (!debug_option)                                                                                  \
+            continue;                                                                                       \
+        char buffer_x[300];                                                                                 \
+        snprintf(buffer_x, sizeof(buffer_x), "debug: ");                                          \
+        snprintf(buffer_x + strlen(buffer_x), sizeof(buffer_x) - strlen(buffer_x), message, ##__VA_ARGS__); \
+        printf("%s\n", buffer_x);                                                      \
+    } while (0)
 #endif

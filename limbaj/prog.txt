@@ -16,8 +16,8 @@ GLOBAL_FUNCTIONS
 MAIN_FUNCTION
 fn main() { 
 
-    char c = 'a';
-    Person a(a:2);
+    string s1 = "s1" ;
+    string s2 = s1 + "s2";
 
-    eval (c );
+    eval (s2 );
 }  

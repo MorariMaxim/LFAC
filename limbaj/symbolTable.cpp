@@ -3,7 +3,7 @@
 
 void nullptr_error(string s)
 {
-    printf("a pointer was null when unexpected; %s\n", s.c_str());
+    debug_print("a pointer was null when unexpected; %s\n", s.c_str());
 }
 
 #define indent(x)                   \
@@ -126,7 +126,7 @@ ValueNode *Symbol::at(ArrayIndexing *indexing)
 
     if (!convert)
     {
-        printf("symbol %s is not an array", name.c_str());
+        semantic_error("symbol %s is not an array", name.c_str());
         return nullptr;
     }
 
@@ -202,17 +202,33 @@ void SymbolTable::printTable()
 {
     cout << to_string();
 }
+#include <fstream>
+void SymbolTable::printTable(string path)
+{
+    std::ofstream outputFile(path);
+
+    // Check if the file is successfully opened
+    if (outputFile.is_open())
+    {
+        outputFile << this->to_string();
+        outputFile.close();
+    }
+    else
+    {
+        std::cerr << "Error: Unable to open the file specified by path s2." << std::endl;
+    }
+}
 
 string SymbolTable::to_string(int depth)
 {
     string table = "";
     table += indent_string(depth);
     if (func_details)
-        table += func_details->signature+"\n";
+        table += func_details->signature + "\n";
     else if (type == scopeType::CLASS_SCOPE)
-        table += "class " + this->name+"\n";
+        table += "class " + this->name + "\n";
     else
-        table += this->name+"\n";
+        table += this->name + "\n";
 
     for (auto &child : classes)
     {
@@ -230,7 +246,7 @@ string SymbolTable::to_string(int depth)
     {
         table += indent_string(depth + 1);
 
-        table += symbol.second->to_string()+"\n";
+        table += symbol.second->to_string() + "\n";
     }
     return table;
 }
@@ -279,7 +295,7 @@ int SymbolTable::declare_symbol(TypeNode *tn, RawNode *id, Expression *value)
             semantic_error("mismatch between variable type and initialization value type\n");
             return false;
         }
-        printf("assigning %s to %s\n", res->to_string().c_str(), name.c_str());
+        debug_print("assigning %s to %s\n", res->to_string().c_str(), name.c_str());
         delete symbol->type;
         symbol->type = res->type;
         symbol->value = res;
@@ -374,13 +390,13 @@ Symbol *SymbolTable::declare_user_symbol(RawNode *classId, RawNode *symbolName)
     debug_print("clas defiend");
     if (!cl)
     {
-        printf("%s isn't a user defined type\n", classId->content.c_str());
+        semantic_error("%s isn't a user defined type\n", classId->content.c_str());
         return nullptr;
     }
 
     if (isLocallyDefined(symbolName->content))
     {
-        printf(" symbol (%s) is already defined\n", symbolName->content.c_str());
+        semantic_error(" symbol (%s) is already defined\n", symbolName->content.c_str());
     }
 
     Symbol *sym = new Symbol();
@@ -409,7 +425,7 @@ Symbol *SymbolTable::declare_user_symbol(RawNode *classId, RawNode *symbolName, 
 
     if (size & 1)
     {
-        printf("invalid initialization seuqence, odd size\n");
+        semantic_error("invalid initialization seuqence, odd size\n");
         return nullptr;
     }
     debug_print("here\n");
@@ -444,17 +460,17 @@ Symbol *SymbolTable::declare_user_symbol(RawNode *classId, RawNode *symbolName, 
         auto val = expr->eval();
         if (!val)
         {
-            printf("val is null\n");
+            debug_print("val is null\n");
         }
         if (!class_fields[id->content]->type)
         {
-            printf("typen is null\n");
+            debug_print("typen is null\n");
         }
 
         if (!Expression::are_types_equal(val->type, class_fields[id->content]->type))
         {
 
-            printf("uneuqal types\n");
+            debug_print("uneuqal types\n");
             return nullptr;
         }
 
@@ -462,7 +478,7 @@ Symbol *SymbolTable::declare_user_symbol(RawNode *classId, RawNode *symbolName, 
         f->type = val->type;
         f->value = val;
 
-        printf("assigned to field %s value %s\n", f->name.c_str(), f->value->to_string().c_str());
+        debug_print("assigned to field %s value %s\n", f->name.c_str(), f->value->to_string().c_str());
     }
 
     return sym;
@@ -474,13 +490,13 @@ Symbol *SymbolTable::is_user_symbol_defined(RawNode *id)
 
     if (!sym)
     {
-        printf("%s is not defined \n", id->content.c_str());
+        semantic_error("%s is not defined \n", id->content.c_str());
         return nullptr;
     }
 
     if (sym->type == nullptr || sym->type->type != USER_TYPE)
     {
-        printf("%s's type is not a class \n", id->content.c_str());
+        semantic_error("%s's type is not a class \n", id->content.c_str());
         return nullptr;
     }
     return sym;
@@ -511,7 +527,7 @@ bool SymbolTable::insert_symbol(Symbol *sym)
         return false;
     }
 
-    printf("at %s... inserted %s, name = %s\n", sym->span->span_to_string().c_str(), sym->to_string().c_str(), sym->name.c_str());
+    debug_print("at %s... inserted %s, name = %s\n", sym->span->span_to_string().c_str(), sym->to_string().c_str(), sym->name.c_str());
     return true;
 }
 
@@ -566,7 +582,7 @@ bool SymbolTable::assign(Symbol *sym, Expression *expr, ArrayIndexing *indexing)
 
     if (!val)
     {
-        printf("couldn't evaluate expression");
+        semantic_error("couldn't evaluate expression");
         return false;
     }
     AssignResult res;
@@ -636,7 +652,7 @@ SymbolTable *SymbolTable::addFunction(FunctionDetails *newFunc)
     newScope->parent = this;
     int debug = 0;
     if (debug)
-        printf("trying to insert %s\n", newFunc->name.c_str());
+        debug_print("trying to insert %s\n", newFunc->name.c_str());
 
     auto res = functions.emplace(newScope->name, newScope);
 
@@ -732,7 +748,7 @@ Symbol *SymbolTable::check_member_access(RawNode *id, RawNode *member_id)
         return nullptr;
     }
 
-    printf("correct member access\n");
+    debug_print("correct member access\n");
     field->second->print();
     return field->second;
 }
