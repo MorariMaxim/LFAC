@@ -219,7 +219,7 @@ expr:     expr '+' expr { print_reduction("expr -> expr + expr");$$ = new Expres
 
         | '-' expr %prec UMINUS  { print_reduction("expr -> - expr");$$ = new Expression(OperTypes::NEG,$2,nullptr);}  
         | '+' expr %prec UMINUS  { print_reduction("expr -> + expr");$$ = $2;}  
-        | '(' expr ')' { print_reduction("expr -> ( expr ) ");$$ = $2;$$->set_span_start($1);$$->set_span_end($3);$1->print_span();$3->print_span();}  
+        | '(' expr ')' { print_reduction("expr -> ( expr ) ");$$ = $2;$$->set_span_start($1);$$->set_span_end($3);}  
         | ID {print_reduction("expr -> ID");$$ = new Expression($1); delete $1;};
         | INTVAL {print_reduction("expr -> INTVAL");$$ = new Expression($1); };  
         | FLOATVAL {print_reduction("expr -> FLOATVAL");$$ = new Expression($1); };  
@@ -309,6 +309,6 @@ int main(int argc, char** argv){
         yyin = fopen(argv[1], "r");    
         yyparse(); 
 
-        rootSymbolTable->printTable("table.txt");
+        rootSymbolTable->printTable();
 }
 

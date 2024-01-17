@@ -61,7 +61,6 @@ Span::~Span()
 int debug_count = 0;
 
 #define unequal_types_error(t1, t2) semantic_error("different types.. %s vs %s", t1->to_string().c_str(), t2->to_string().c_str())
- 
 
 void symbol_not_declared(string s)
 {
@@ -172,17 +171,17 @@ void print_token(string str, Colours col)
         this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 bool Expression::are_types_equal(TypeNode *t1, TypeNode *t2)
-{ 
+{
     if (!t1 || !t2)
     {
         debug_print("one is null\n");
         return false;
-    }  
+    }
     if (!t1->is_equal(t2))
-    { 
+    {
         unequal_types_error(t1, t2);
         return false;
-    } 
+    }
     return true;
 }
 
@@ -353,9 +352,9 @@ ValueNode *Expression::eval_wrapper(bool mode)
     if (t)
     {
         if (mode)
-            t->print();
+            printf("value of (%s) = %s\n", expr_to_string().c_str(), t->to_string().c_str());
         else
-            printf("%s", t->type->to_string().c_str());
+            printf("type  of (%s) = %s\n", expr_to_string().c_str(), t->type->to_string().c_str());
     }
     else
     {
@@ -495,6 +494,69 @@ Expression::~Expression()
         }
     }
 }
+string OperTypes_2_string(OperTypes type)
+{
+
+    switch (type)
+    {
+    case OperTypes::ADD:
+        return "+";
+    case OperTypes::SUB:
+        return "-";
+    case OperTypes::DIV:
+        return "/";
+    case OperTypes::MUL:
+        return "*";
+    case OperTypes::EQ:
+        return "==";
+    case OperTypes::NEQ:
+        return "!=";
+    case OperTypes::LAND:
+        return "&&";
+    case OperTypes::LNOT:
+        return "!";
+    case OperTypes::LE:
+        return "<";
+    case OperTypes::LEQ:
+        return "<=";
+    case OperTypes::GE:
+        return ">";
+    case OperTypes::GEQ:
+        return ">=";
+    case OperTypes::LOR:
+        return "||";
+    case OperTypes::NEG:
+        return "-";
+    default:
+        return "";
+    }
+}
+
+string Expression::expr_to_string()
+{
+    if (left && right)
+    {
+        string lstr = left->expr_to_string();
+        string rstr = right->expr_to_string();
+
+        if (parenthesized)
+            return "( " + lstr + " " + OperTypes_2_string(oper) + " " + rstr + " )";
+        return lstr + " " + OperTypes_2_string(oper) + " " + rstr;
+    }
+    if (left)
+    {
+        string lstr = left->expr_to_string();
+
+        if (parenthesized)
+            return "( " + OperTypes_2_string(oper) + " " + lstr + " )";
+        return OperTypes_2_string(oper) + " " + lstr;
+    }
+    auto leaf = get_leaf_value();
+    if (leaf)
+        return leaf->to_string();
+
+    return "";
+}
 
 TypeNode *Expression::get_leaf_type()
 {
@@ -561,7 +623,7 @@ FunctionDetails::FunctionDetails(string name, TypeNode *ret_type, Vector *pars) 
     return_type = ret_type;
 
     if (!ret_type)
-    { 
+    {
         return_type = new TypeNode(types::VOID);
     }
 
@@ -602,16 +664,16 @@ void FunctionDetails::check_return_type()
             return;
         semantic_error("at line %d.. expected a return value as return type is not void", start.row);
         return;
-    } 
+    }
     auto val = gReturnExpr->eval();
     delete gReturnExpr;
     gReturnExpr = nullptr;
     auto type = val->type;
- 
+
     if (!Expression::are_types_equal(type, return_type))
-    { 
+    {
         semantic_error("at line %d..mismatchd return types: %s vs %s", gTempSpan.start.row, type->to_string().c_str(), return_type->to_string().c_str());
-    } 
+    }
 }
 
 void FunctionDetails::print_parameters()
@@ -717,7 +779,7 @@ FunctionCall::FunctionCall(RawNode *scope_id, Vector *fnname_parameters) : Value
 
     if (funcnode == nullptr)
     {
-        semantic_error("found no such '%s' function\n",fn_name->content.c_str());
+        semantic_error("found no such '%s' function\n", fn_name->content.c_str());
         return;
     }
     else

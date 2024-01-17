@@ -1,0 +1,7 @@
+global
+  class Person
+    fn func1(int a, int x, float b) -> string
+    int b
+    int a
+  fn main() -> void
+    const string a = a

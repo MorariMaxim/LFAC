@@ -207,15 +207,10 @@ void SymbolTable::printTable(string path)
 {
     std::ofstream outputFile(path);
 
-    // Check if the file is successfully opened
     if (outputFile.is_open())
     {
         outputFile << this->to_string();
         outputFile.close();
-    }
-    else
-    {
-        std::cerr << "Error: Unable to open the file specified by path s2." << std::endl;
     }
 }
 
@@ -748,7 +743,6 @@ Symbol *SymbolTable::check_member_access(RawNode *id, RawNode *member_id)
         return nullptr;
     }
 
-    debug_print("correct member access\n");
-    field->second->print();
+    debug_print("correct member access\n"); 
     return field->second;
 }

@@ -16,8 +16,12 @@ GLOBAL_FUNCTIONS
 MAIN_FUNCTION
 fn main() { 
 
-    string s1 = "s1" ;
-    string s2 = s1 + "s2";
+    Person p(b:20);
 
-    eval (s2 );
+    int x = p.b;
+
+    typeof ( (x* p.b) <= 100 );
+    eval ( (x* p.b) <= 100 );
+    
+
 }  

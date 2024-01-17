@@ -1946,7 +1946,7 @@ yyreduce:
 
   case 79: /* expr: '(' expr ')'  */
 #line 222 "limbaj.y"
-                       { print_reduction("expr -> ( expr ) ");(yyval.exprnode) = (yyvsp[-1].exprnode);(yyval.exprnode)->set_span_start((yyvsp[-2].spanned));(yyval.exprnode)->set_span_end((yyvsp[0].spanned));(yyvsp[-2].spanned)->print_span();(yyvsp[0].spanned)->print_span();}
+                       { print_reduction("expr -> ( expr ) ");(yyval.exprnode) = (yyvsp[-1].exprnode);(yyval.exprnode)->set_span_start((yyvsp[-2].spanned));(yyval.exprnode)->set_span_end((yyvsp[0].spanned));}
 #line 1951 "limbaj.tab.c"
     break;
 
@@ -2398,6 +2398,6 @@ int main(int argc, char** argv){
         yyin = fopen(argv[1], "r");    
         yyparse(); 
 
-        rootSymbolTable->printTable("table.txt");
+        rootSymbolTable->printTable();
 }
 

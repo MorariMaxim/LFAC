@@ -463,6 +463,7 @@ class Expression : public Span
 {
 public:
     Expression *left = nullptr, *right = nullptr;
+    bool parenthesized = false;
     OperTypes oper;
     bool symbol_type; // 1 for symbol; 0 for temp object
     union
@@ -476,6 +477,7 @@ public:
     Expression(Symbol *sym);
     Expression(RawNode *id);
     virtual ~Expression();
+    string expr_to_string();
 
     TypeNode *type();
 
