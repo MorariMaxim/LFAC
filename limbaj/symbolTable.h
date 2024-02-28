@@ -52,15 +52,15 @@ public:
 
     SymbolTable *add_class(RawNode *gn);
 
-    SymbolTable *getParent();
-    string getFullPath();
-    void printTable();
-    void printTable(string path);
+    SymbolTable *get_parent();
+    string get_full_path();
+    void print_table();
+    void print_table(string path);
     string to_string(int depth = 0);
     Symbol *is_symbol_defined_in_path(string name);
     Symbol *isLocallyDefined(string name);
-    FunctionDetails *isFuncDefined(string name);
-    SymbolTable *isClassDefined(string name);
+    FunctionDetails *is_func_defined(string name);
+    SymbolTable *is_class_defined(string name);
 
     Symbol *is_user_symbol_defined(RawNode *id);
     Symbol *check_member_access(RawNode *id, RawNode *member_id);

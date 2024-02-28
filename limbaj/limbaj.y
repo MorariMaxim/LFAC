@@ -15,7 +15,7 @@ Span gTempSpan;
 void yyerror(const char * s); 
 Expression* gReturnExpr = nullptr;
 
-#define backtrack_scope() {currentSymbolTable = currentSymbolTable->getParent();}
+#define backtrack_scope() {currentSymbolTable = currentSymbolTable->get_parent();}
 #define check_main(f) {if(f->name != "main" ) semantic_error("no main function");  }
 bool treat_return_statement(Expression * val) { 
 
@@ -309,6 +309,7 @@ int main(int argc, char** argv){
         yyin = fopen(argv[1], "r");    
         yyparse(); 
 
-        rootSymbolTable->printTable();
+        rootSymbolTable->print_table();
+        rootSymbolTable->print_table("table.txt");
 }
 

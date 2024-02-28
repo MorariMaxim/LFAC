@@ -185,7 +185,7 @@ SymbolTable::SymbolTable(string name) : name(name)
     visibility = currentVisibility;
 }
 
-string SymbolTable::getFullPath()
+string SymbolTable::get_full_path()
 {
     string fullPath = this->name;
 
@@ -198,12 +198,12 @@ string SymbolTable::getFullPath()
     return fullPath;
 }
 
-void SymbolTable::printTable()
+void SymbolTable::print_table()
 {
     cout << to_string();
 }
 #include <fstream>
-void SymbolTable::printTable(string path)
+void SymbolTable::print_table(string path)
 {
     std::ofstream outputFile(path);
 
@@ -309,7 +309,7 @@ int SymbolTable::declare_symbol(TypeNode *tn, RawNode *id, Expression *value)
     return insert_symbol(symbol);
 }
 
-SymbolTable *SymbolTable::isClassDefined(string name)
+SymbolTable *SymbolTable::is_class_defined(string name)
 {
     if (type == CLASS_SCOPE && this->name == name)
         return this;
@@ -322,13 +322,13 @@ SymbolTable *SymbolTable::isClassDefined(string name)
 
     if (parent)
     {
-        return parent->isClassDefined(name);
+        return parent->is_class_defined(name);
     }
 
     return nullptr;
 }
 
-SymbolTable *SymbolTable::getParent()
+SymbolTable *SymbolTable::get_parent()
 {
     return parent;
 }
@@ -380,7 +380,7 @@ SymbolTable *SymbolTable::addScope(string name)
 
 Symbol *SymbolTable::declare_user_symbol(RawNode *classId, RawNode *symbolName)
 {
-    auto cl = isClassDefined(classId->content);
+    auto cl = is_class_defined(classId->content);
 
     debug_print("clas defiend");
     if (!cl)
@@ -619,7 +619,7 @@ void SymbolTable::set_span(Span *other)
     span->set_span(other);
 }
 
-FunctionDetails *SymbolTable::isFuncDefined(string name)
+FunctionDetails *SymbolTable::is_func_defined(string name)
 {
     if (func_details)
     {
@@ -635,7 +635,7 @@ FunctionDetails *SymbolTable::isFuncDefined(string name)
     }
     if (parent != nullptr)
     {
-        return parent->isFuncDefined(name);
+        return parent->is_func_defined(name);
     }
 
     return nullptr;

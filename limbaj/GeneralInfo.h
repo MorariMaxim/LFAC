@@ -119,8 +119,7 @@ public:
 
     virtual string to_string()
     {
-        semantic_error("unimplemented ");
-        return "";
+        return "0";
     };
 
     virtual void copy_to(ValueNode *&other)

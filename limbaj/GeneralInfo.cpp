@@ -775,7 +775,7 @@ FunctionCall::FunctionCall(RawNode *scope_id, Vector *fnname_parameters) : Value
     if (!fn_name)
         semantic_error("funcname is nullptr\n");
 
-    auto funcnode = scope->isFuncDefined(fn_name->content);
+    auto funcnode = scope->is_func_defined(fn_name->content);
 
     if (funcnode == nullptr)
     {
@@ -1695,7 +1695,7 @@ ClassType::ClassType(SymbolTable *ct) : TypeNode(types::USER_TYPE)
 
 ClassType::ClassType(RawNode *id) : TypeNode(types::USER_TYPE)
 {
-    clas = currentSymbolTable->isClassDefined(id->content);
+    clas = currentSymbolTable->is_class_defined(id->content);
 
     if (!clas)
     {
