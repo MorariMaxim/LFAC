@@ -2,6 +2,68 @@
 The objective of this project was making a **parser** using **flex** and **bison** in order to pass a university course.
 Basically, it recognizes a pseudo programming language using a context independent grammar.
 
+## Example Input
+```
+CLASS_SECTION
+class Person {
+private:
+    int a;
+    int b;
+    fn func(int a, int x, float b ) -> int {
+        return 10;
+    } 
+}
+GLOBAL_VARIABLES
+
+int gx = 19;
+
+GLOBAL_FUNCTIONS
+
+fn rand() -> int {
+    return 10;
+}
+
+MAIN_FUNCTION
+fn main() { 
+
+    int a [2][2][2][2][2];
+    a[0][0][0][0] = [1,2];
+
+    Person p(b:20);
+
+    const int x = p.b;
+    
+    int f = p.func(1,2,1.2);
+
+    typeof ( (x* p.b) <= 100 );
+    eval ( (x* p.b) <= 100 + p.func(1,2,1.2));
+    
+    int sum = 0;
+    for(int x = 10; x <100; ) {
+
+        sum = sum + x;
+    }
+}
+```
+
+## Example Symbol Tabple
+```
+global
+  class Person
+    fn func(int a, int x, float b) -> int
+    int b
+    int a
+  fn main() -> void
+    for()#0
+      int x = 10
+    int sum = 10
+    int f = 0
+    const int x = 20
+    Person p = (int a; int b = 20; )
+    int[2][2][2][2][2] a = [[[[[1,2],[0,0]],[[0,0],[0,0]]],[[[0,0],[0,0]],[[0,0],[0,0]]]],[[[[0,0],[0,0]],[[0,0],[0,0]]],[[[0,0],[0,0]],[[0,0],[0,0]]]]]
+  fn rand() -> int
+  int gx = 19
+```
 
 ## Quality of the code
 - Obvious memory leaks, I just focused on making it work
