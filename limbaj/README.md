@@ -46,7 +46,7 @@ fn main() {
 }
 ```
 
-## Example Symbol Tabple
+## Example Symbol Table
 ```
 global
   class Person
@@ -64,7 +64,7 @@ global
   fn rand() -> int
   int gx = 19
 ```
-
+The global scope contains the class Person, the global variable gx, and 2 function. Function main contains a for loop (it has its own scope), among other things.
 ## Quality of the code
 - Obvious memory leaks, I just focused on making it work
 - Hard to read and modify, I didn't use POO so much in the past
