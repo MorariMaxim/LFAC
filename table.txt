@@ -1,0 +1,15 @@
+global
+  class Person
+    fn func(int a, int x, float b) -> int
+    int b
+    int a
+  fn main() -> void
+    for()#0
+      int x = 10
+    int sum = 10
+    int f = 0
+    const int x = 20
+    Person p = (int a; int b = 20; )
+    int[2][2][2][2][2] a = [[[[[1,2],[0,0]],[[0,0],[0,0]]],[[[0,0],[0,0]],[[0,0],[0,0]]]],[[[[0,0],[0,0]],[[0,0],[0,0]]],[[[0,0],[0,0]],[[0,0],[0,0]]]]]
+  fn rand() -> int
+  int gx = 19
